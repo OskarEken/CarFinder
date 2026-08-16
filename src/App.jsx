@@ -190,6 +190,8 @@ const STATUS_LEGEND = [
   { value: 'waiting-cleaning', label: 'Waiting for cleaning', color: '#8b5cf6' },
   { value: 'cleaned', label: 'Cleaned', color: '#3b82f6' },
   { value: 'ready', label: 'Ready for delivery', color: '#22c55e' },
+  { value: 'demo', label: 'Demo', color: '#0891b2' },
+  { value: 'test-drive', label: 'Test drive', color: '#db2777' },
 ]
 
 // Fits a label's text to whatever box size it's been resized to,
@@ -4800,6 +4802,8 @@ function App() {
   const STATUS_SORT_ORDER = [
     'sold',
     'reserved',
+    'demo',
+    'test-drive',
     'waiting-pdi',
     'waiting-cleaning',
     'cleaned',
@@ -6587,6 +6591,14 @@ function App() {
                         <option value="ready">
                           Ready for delivery
                         </option>
+
+                        <option value="demo">
+                          Demo
+                        </option>
+
+                        <option value="test-drive">
+                          Test drive
+                        </option>
                       </select>
                     </div>
                   )
@@ -6647,6 +6659,14 @@ function App() {
 
                   <option value="ready">
                     Ready for delivery
+                  </option>
+
+                  <option value="demo">
+                    Demo
+                  </option>
+
+                  <option value="test-drive">
+                    Test drive
                   </option>
                 </select>
 
@@ -6807,6 +6827,14 @@ function App() {
 
                       <option value="ready">
                         Ready for delivery
+                      </option>
+
+                      <option value="demo">
+                        Demo
+                      </option>
+
+                      <option value="test-drive">
+                        Test drive
                       </option>
                     </select>
                   </div>

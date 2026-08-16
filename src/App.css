@@ -378,6 +378,22 @@ button {
   border-right-color: #22c55e;
 }
 
+.vehicle-list-item.status-demo {
+  border-right-color: #0891b2;
+}
+
+.vehicle-list-item.status-demo:hover {
+  border-right-color: #0891b2;
+}
+
+.vehicle-list-item.status-test-drive {
+  border-right-color: #db2777;
+}
+
+.vehicle-list-item.status-test-drive:hover {
+  border-right-color: #db2777;
+}
+
 .vehicle-list-top {
   display: flex;
   align-items: center;
@@ -1313,6 +1329,14 @@ button {
   background: rgba(34, 197, 94, 0.5);
 }
 
+.parking-space.status-demo {
+  background: rgba(8, 145, 178, 0.5);
+}
+
+.parking-space.status-test-drive {
+  background: rgba(219, 39, 119, 0.5);
+}
+
 /* SELECTION */
 
 .parking-space.selected {
@@ -1760,6 +1784,14 @@ button {
 
 .vehicle-status-dot.status-dot-ready {
   background: #22c55e;
+}
+
+.vehicle-status-dot.status-dot-demo {
+  background: #0891b2;
+}
+
+.vehicle-status-dot.status-dot-test-drive {
+  background: #db2777;
 }
 
 /* SPACE INSPECTOR */
