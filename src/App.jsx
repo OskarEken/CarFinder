@@ -940,14 +940,14 @@ function SettingsPanel({
 
       if (!otherAdmins) {
         setError(
-          'You\u2019re the only admin here. Promote someone else to admin before leaving.'
+          "You're the only admin here. Promote someone else to admin before leaving."
         )
         return
       }
     }
 
     const confirmed = window.confirm(
-      `Leave ${organization.name}? You\u2019ll need an invite code to rejoin.`
+      `Leave ${organization.name}? You'll need an invite code to rejoin.`
     )
 
     if (!confirmed) {
@@ -1006,7 +1006,7 @@ function SettingsPanel({
 
               <button
                 type="button"
-                className="cancel-car-button"
+                className="invite-action-button"
                 onClick={copyInviteCode}
               >
                 {copied ? 'Copied!' : 'Copy'}
@@ -1044,7 +1044,7 @@ function SettingsPanel({
 
               <button
                 type="submit"
-                className="cancel-car-button"
+                className="invite-action-button invite-action-primary"
                 disabled={inviting}
               >
                 {inviting
@@ -1055,7 +1055,7 @@ function SettingsPanel({
 
             {inviteSent && (
               <div className="login-info">
-                Invite sent. They\u2019ll be
+                Invite sent. They'll be
                 added to this organization
                 automatically the first time
                 they sign in.
@@ -1063,7 +1063,7 @@ function SettingsPanel({
             )}
 
             <div className="field-hint">
-              We\u2019ll email them a sign-in
+              We'll email them a sign-in
               link. No account needed yet, one
               will be created for them.
             </div>
