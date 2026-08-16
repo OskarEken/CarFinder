@@ -782,6 +782,9 @@ function SettingsPanel({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteSent, setInviteSent] = useState(false)
+  const [inviting, setInviting] = useState(false)
 
   const isAdmin = membership.role === 'admin'
 
@@ -871,6 +874,58 @@ function SettingsPanel({
       // Clipboard access can fail; the code is
       // still visible on screen to copy by hand.
     }
+  }
+
+  const handleInviteByEmail = async (event) => {
+    event.preventDefault()
+
+    setError(null)
+    setInviteSent(false)
+
+    const cleanEmail = inviteEmail
+      .trim()
+      .toLowerCase()
+
+    if (!cleanEmail) {
+      return
+    }
+
+    setInviting(true)
+
+    const { error: inviteError } = await supabase
+      .from('org_invites')
+      .insert({
+        org_id: organization.id,
+        email: cleanEmail,
+        invited_by: userId,
+      })
+
+    if (inviteError) {
+      setInviting(false)
+
+      setError(
+        inviteError.message.includes('duplicate')
+          ? 'That email already has a pending invite.'
+          : inviteError.message
+      )
+
+      return
+    }
+
+    const { error: otpError } =
+      await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+      })
+
+    setInviting(false)
+
+    if (otpError) {
+      setError(otpError.message)
+      return
+    }
+
+    setInviteEmail('')
+    setInviteSent(true)
   }
 
   const handleLeaveOrg = async () => {
@@ -964,6 +1019,55 @@ function SettingsPanel({
               "Join an organization" screen.
             </div>
           </div>
+        )}
+
+        {isAdmin && (
+          <form
+            className="detail-group"
+            onSubmit={handleInviteByEmail}
+          >
+            <label>INVITE BY EMAIL</label>
+
+            <div className="invite-code-row">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(event) =>
+                  setInviteEmail(
+                    event.target.value
+                  )
+                }
+                placeholder="name@example.com"
+                className="login-input"
+                style={{ marginBottom: 0 }}
+              />
+
+              <button
+                type="submit"
+                className="cancel-car-button"
+                disabled={inviting}
+              >
+                {inviting
+                  ? 'Sending\u2026'
+                  : 'Send invite'}
+              </button>
+            </div>
+
+            {inviteSent && (
+              <div className="login-info">
+                Invite sent. They\u2019ll be
+                added to this organization
+                automatically the first time
+                they sign in.
+              </div>
+            )}
+
+            <div className="field-hint">
+              We\u2019ll email them a sign-in
+              link. No account needed yet, one
+              will be created for them.
+            </div>
+          </form>
         )}
 
         <div className="detail-group">
@@ -1139,11 +1243,53 @@ function App() {
     if (data) {
       setMembership(data)
       setOrganization(data.organizations)
-    } else {
-      setMembership(null)
-      setOrganization(null)
+      setOrgLoading(false)
+      return
     }
 
+    const userEmail =
+      session && session.user
+        ? session.user.email
+        : null
+
+    if (userEmail) {
+      const { data: invite } = await supabase
+        .from('org_invites')
+        .select('*')
+        .eq('email', userEmail)
+        .maybeSingle()
+
+      if (invite) {
+        await supabase
+          .from('memberships')
+          .insert({
+            org_id: invite.org_id,
+            user_id: userId,
+            role: 'user',
+          })
+
+        await supabase
+          .from('org_invites')
+          .delete()
+          .eq('id', invite.id)
+
+        const { data: retry } = await supabase
+          .from('memberships')
+          .select('*, organizations(*)')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (retry) {
+          setMembership(retry)
+          setOrganization(retry.organizations)
+          setOrgLoading(false)
+          return
+        }
+      }
+    }
+
+    setMembership(null)
+    setOrganization(null)
     setOrgLoading(false)
   }
 
