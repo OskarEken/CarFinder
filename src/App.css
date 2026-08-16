@@ -2171,16 +2171,21 @@ button {
 
 .add-car-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 8px;
   margin-top: 7px;
   padding-top: 18px;
   border-top: 1px solid #edf0f2;
 }
 
+.add-car-actions .add-car-cancel,
 .add-car-actions .add-car-button {
+  flex: 1;
   width: auto;
   margin-top: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .add-car-cancel,
