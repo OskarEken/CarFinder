@@ -1259,6 +1259,392 @@ function App() {
   const [orgLoading, setOrgLoading] = useState(true)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
+  const [mapDataLoaded, setMapDataLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!organization) {
+      setMapDataLoaded(false)
+      return
+    }
+
+    const loadMapData = async () => {
+      setMapDataLoaded(false)
+
+      const [
+        lotsRes,
+        spacesRes,
+        vehiclesRes,
+        areasRes,
+        roadsRes,
+        labelsRes,
+        customRes,
+      ] = await Promise.all([
+        supabase
+          .from('lots')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('spaces')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('vehicles')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('map_areas')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('map_roads')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('map_labels')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('map_custom_objects')
+          .select('*')
+          .eq('org_id', organization.id),
+      ])
+
+      if (
+        lotsRes.data &&
+        lotsRes.data.length > 0
+      ) {
+        setLots(
+          lotsRes.data.map((lot) => ({
+            id: lot.id,
+            name: lot.name,
+          }))
+        )
+
+        setActiveLotId(lotsRes.data[0].id)
+
+        setSpaces(
+          (spacesRes.data || []).map(
+            (space) => ({
+              id: space.id,
+              x: space.x,
+              y: space.y,
+              label: space.label,
+              rotation: space.rotation,
+              lotId: space.lot_id,
+            })
+          )
+        )
+      } else {
+        const defaultLot = {
+          id: Date.now(),
+          name: 'Main Yard',
+        }
+
+        setLots([defaultLot])
+        setActiveLotId(defaultLot.id)
+
+        setSpaces(
+          initialSpaces.map(
+            (space, index) => ({
+              ...space,
+              id: Date.now() + index + 1,
+              lotId: defaultLot.id,
+            })
+          )
+        )
+      }
+
+      setVehicles(
+        (vehiclesRes.data || []).map(
+          (vehicle) => ({
+            id: vehicle.id,
+            registration:
+              vehicle.registration,
+            vin: vehicle.vin,
+            make: vehicle.make,
+            status: vehicle.status,
+            spaceId: vehicle.space_id,
+          })
+        )
+      )
+
+      setAreas(
+        (areasRes.data || []).map(
+          (area) => ({
+            id: area.id,
+            x: area.x,
+            y: area.y,
+            width: area.width,
+            height: area.height,
+            label: area.label,
+            color: area.color,
+            lotId: area.lot_id,
+          })
+        )
+      )
+
+      setRoads(
+        computeGroupsPerLot(
+          (roadsRes.data || []).map(
+            (road) => ({
+              id: road.id,
+              x: road.x,
+              y: road.y,
+              width: road.width,
+              height: road.height,
+              lotId: road.lot_id,
+            })
+          )
+        )
+      )
+
+      setLabels(
+        (labelsRes.data || []).map(
+          (label) => ({
+            id: label.id,
+            x: label.x,
+            y: label.y,
+            width: label.width,
+            height: label.height,
+            text: label.text,
+            lotId: label.lot_id,
+          })
+        )
+      )
+
+      setCustomObjects(
+        (customRes.data || []).map(
+          (obj) => ({
+            id: obj.id,
+            label: obj.label,
+            color: obj.color,
+            points: obj.points,
+            lotId: obj.lot_id,
+          })
+        )
+      )
+
+      setMapDataLoaded(true)
+    }
+
+    loadMapData()
+  }, [organization])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('lots')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (lots.length > 0) {
+        await supabase.from('lots').insert(
+          lots.map((lot) => ({
+            id: lot.id,
+            org_id: organization.id,
+            name: lot.name,
+          }))
+        )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [lots, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('spaces')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (spaces.length > 0) {
+        await supabase.from('spaces').insert(
+          spaces.map((space) => ({
+            id: space.id,
+            org_id: organization.id,
+            lot_id: space.lotId,
+            x: space.x,
+            y: space.y,
+            label: space.label,
+            rotation: space.rotation,
+          }))
+        )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [spaces, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('vehicles')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (vehicles.length > 0) {
+        await supabase
+          .from('vehicles')
+          .insert(
+            vehicles.map((vehicle) => ({
+              id: vehicle.id,
+              org_id: organization.id,
+              registration:
+                vehicle.registration,
+              vin: vehicle.vin,
+              make: vehicle.make,
+              status: vehicle.status,
+              space_id: vehicle.spaceId,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [vehicles, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('map_areas')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (areas.length > 0) {
+        await supabase
+          .from('map_areas')
+          .insert(
+            areas.map((area) => ({
+              id: area.id,
+              org_id: organization.id,
+              lot_id: area.lotId,
+              x: area.x,
+              y: area.y,
+              width: area.width,
+              height: area.height,
+              label: area.label,
+              color: area.color,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [areas, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('map_roads')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (roads.length > 0) {
+        await supabase
+          .from('map_roads')
+          .insert(
+            roads.map((road) => ({
+              id: road.id,
+              org_id: organization.id,
+              lot_id: road.lotId,
+              x: road.x,
+              y: road.y,
+              width: road.width,
+              height: road.height,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [roads, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('map_labels')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (labels.length > 0) {
+        await supabase
+          .from('map_labels')
+          .insert(
+            labels.map((label) => ({
+              id: label.id,
+              org_id: organization.id,
+              lot_id: label.lotId,
+              x: label.x,
+              y: label.y,
+              width: label.width,
+              height: label.height,
+              text: label.text,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [labels, organization, mapDataLoaded])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      await supabase
+        .from('map_custom_objects')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (customObjects.length > 0) {
+        await supabase
+          .from('map_custom_objects')
+          .insert(
+            customObjects.map((obj) => ({
+              id: obj.id,
+              org_id: organization.id,
+              lot_id: obj.lotId,
+              label: obj.label,
+              color: obj.color,
+              points: obj.points,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [
+    customObjects,
+    organization,
+    mapDataLoaded,
+  ])
 
   const loadMembership = async (userId) => {
     setOrgLoading(true)
@@ -6273,7 +6659,7 @@ function App() {
 
               <div className="add-car-actions">
                 <button
-                  className="cancel-car-button"
+                  className="add-car-cancel"
                   onClick={() =>
                     setShowAddCar(
                       false
