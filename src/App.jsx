@@ -192,6 +192,35 @@ const STATUS_LEGEND = [
   { value: 'ready', label: 'Ready for delivery', color: '#22c55e' },
 ]
 
+// Fits a label's text to whatever box size it's been resized to,
+// shrinking or growing the font so it stays readable without
+// overflowing, rather than staying a fixed size regardless of box.
+function computeLabelFontSize(width, height, text) {
+  const availableWidth = Math.max(
+    width - 16,
+    10
+  )
+
+  const availableHeight = Math.max(
+    height - 10,
+    8
+  )
+
+  const charCount = Math.max(
+    (text || '').length,
+    1
+  )
+
+  const byWidth =
+    availableWidth / (charCount * 0.58)
+
+  const byHeight = availableHeight * 0.55
+
+  const fitted = Math.min(byWidth, byHeight)
+
+  return Math.max(8, Math.min(fitted, 30))
+}
+
 function hexToRgba(hex, alpha) {
   const clean = hex.replace('#', '')
 
@@ -1321,6 +1350,7 @@ function App() {
   const [draggingArea, setDraggingArea] = useState(null)
   const [resizingArea, setResizingArea] = useState(null)
   const [resizingRoad, setResizingRoad] = useState(null)
+  const [resizingLabel, setResizingLabel] = useState(null)
   const [draggingRoad, setDraggingRoad] = useState(null)
 
   const [selectionBox, setSelectionBox] = useState(null)
@@ -1922,6 +1952,8 @@ function App() {
         id: Date.now(),
         x: snapToGrid(position.x - 40),
         y: snapToGrid(position.y - 15),
+        width: 84,
+        height: 32,
         text: 'Label',
         lotId: activeLotId,
       }
@@ -2873,6 +2905,97 @@ function App() {
       return
     }
 
+    if (resizingLabel) {
+      const deltaX =
+        position.x -
+        resizingLabel.startPointerX
+
+      const deltaY =
+        position.y -
+        resizingLabel.startPointerY
+
+      const MIN_SIZE = GRID_SIZE
+
+      let nextX = resizingLabel.startX
+      let nextY = resizingLabel.startY
+      let nextWidth = resizingLabel.startWidth
+      let nextHeight = resizingLabel.startHeight
+
+      if (
+        resizingLabel.corner === 'se' ||
+        resizingLabel.corner === 'ne'
+      ) {
+        nextWidth = Math.max(
+          MIN_SIZE,
+          resizingLabel.startWidth + deltaX
+        )
+      }
+
+      if (
+        resizingLabel.corner === 'sw' ||
+        resizingLabel.corner === 'nw'
+      ) {
+        const proposedWidth =
+          resizingLabel.startWidth - deltaX
+
+        nextWidth = Math.max(
+          MIN_SIZE,
+          proposedWidth
+        )
+
+        nextX =
+          resizingLabel.startX +
+          (resizingLabel.startWidth -
+            nextWidth)
+      }
+
+      if (
+        resizingLabel.corner === 'se' ||
+        resizingLabel.corner === 'sw'
+      ) {
+        nextHeight = Math.max(
+          MIN_SIZE,
+          resizingLabel.startHeight + deltaY
+        )
+      }
+
+      if (
+        resizingLabel.corner === 'ne' ||
+        resizingLabel.corner === 'nw'
+      ) {
+        const proposedHeight =
+          resizingLabel.startHeight - deltaY
+
+        nextHeight = Math.max(
+          MIN_SIZE,
+          proposedHeight
+        )
+
+        nextY =
+          resizingLabel.startY +
+          (resizingLabel.startHeight -
+            nextHeight)
+      }
+
+      setLabels((current) => {
+        return current.map((label) => {
+          if (label.id !== resizingLabel.id) {
+            return label
+          }
+
+          return {
+            ...label,
+            x: snapToGrid(nextX),
+            y: snapToGrid(nextY),
+            width: snapToGrid(nextWidth),
+            height: snapToGrid(nextHeight),
+          }
+        })
+      })
+
+      return
+    }
+
     if (draggingArea) {
       const newX = snapToGrid(
         position.x - draggingArea.offsetX
@@ -3251,6 +3374,7 @@ function App() {
     setDraggingRoad(null)
     setResizingRoad(null)
     setDraggingLabel(null)
+    setResizingLabel(null)
     setDraggingCustomObject(null)
     setDraggingVertex(null)
     setPreviewPosition(null)
@@ -3527,6 +3651,33 @@ function App() {
       startY: road.y,
       startWidth: road.width,
       startHeight: road.height,
+    })
+  }
+
+  const startLabelResize = (
+    event,
+    label,
+    corner
+  ) => {
+    if (!showToolsPanel) {
+      return
+    }
+
+    event.stopPropagation()
+
+    pushHistory()
+
+    const position = getMousePosition(event)
+
+    setResizingLabel({
+      id: label.id,
+      corner,
+      startPointerX: position.x,
+      startPointerY: position.y,
+      startX: label.x,
+      startY: label.y,
+      startWidth: label.width || 84,
+      startHeight: label.height || 32,
     })
   }
 
@@ -5380,56 +5531,111 @@ function App() {
                 }
               )}
 
-              {visibleLabels.map((label) => (
-                <div
-                  key={label.id}
-                  className={
-                    'map-label' +
-                    (selectedLabel === label.id
-                      ? ' selected'
-                      : '')
-                  }
-                  style={{
-                    left: label.x,
-                    top: label.y,
-                    cursor: showToolsPanel
-                      ? 'grab'
-                      : 'default',
-                  }}
-                  onMouseDown={(event) =>
-                    startLabelDrag(
-                      event,
-                      label
-                    )
-                  }
-                  onClick={(event) => {
-                    if (!showToolsPanel) {
-                      return
+              {visibleLabels.map((label) => {
+                const labelWidth =
+                  label.width || 84
+
+                const labelHeight =
+                  label.height || 32
+
+                const isLabelSelected =
+                  selectedLabel === label.id
+
+                return (
+                  <div
+                    key={label.id}
+                    className={
+                      'map-label' +
+                      (isLabelSelected
+                        ? ' selected'
+                        : '')
                     }
-
-                    event.stopPropagation()
-
-                    if (
-                      justFinishedSelecting.current
-                    ) {
-                      justFinishedSelecting.current =
-                        false
-
-                      return
+                    style={{
+                      left: label.x,
+                      top: label.y,
+                      width: labelWidth,
+                      height: labelHeight,
+                      fontSize:
+                        computeLabelFontSize(
+                          labelWidth,
+                          labelHeight,
+                          label.text
+                        ),
+                      cursor: showToolsPanel
+                        ? 'grab'
+                        : 'default',
+                    }}
+                    onMouseDown={(event) =>
+                      startLabelDrag(
+                        event,
+                        label
+                      )
                     }
+                    onClick={(event) => {
+                      if (!showToolsPanel) {
+                        return
+                      }
 
-                    setSelectedLabel(label.id)
-                    setSelectedSpace(null)
-                    setSelectedArea(null)
-                    setSelectedRoad(null)
-                    setSelectedVehicle(null)
-                    setSelectedSpaces([])
-                    setShowAddCar(false)
-                  }}
-                >
-                  {label.text}
-                </div>
-              ))}
+                      event.stopPropagation()
+
+                      if (
+                        justFinishedSelecting.current
+                      ) {
+                        justFinishedSelecting.current =
+                          false
+
+                        return
+                      }
+
+                      setSelectedLabel(label.id)
+                      setSelectedSpace(null)
+                      setSelectedArea(null)
+                      setSelectedRoad(null)
+                      setSelectedVehicle(null)
+                      setSelectedSpaces([])
+                      setShowAddCar(false)
+                    }}
+                  >
+                    {label.text}
+                  </div>
+                )
+              })}
+
+              {showToolsPanel &&
+                selectedLabelData &&
+                [
+                  { corner: 'nw', cx: 0, cy: 0 },
+                  { corner: 'ne', cx: 1, cy: 0 },
+                  { corner: 'sw', cx: 0, cy: 1 },
+                  { corner: 'se', cx: 1, cy: 1 },
+                ].map((handle) => (
+                  <div
+                    key={handle.corner}
+                    className={
+                      'resize-handle resize-handle-' +
+                      handle.corner
+                    }
+                    style={{
+                      left:
+                        selectedLabelData.x +
+                        (selectedLabelData.width ||
+                          84) *
+                          handle.cx,
+                      top:
+                        selectedLabelData.y +
+                        (selectedLabelData.height ||
+                          32) *
+                          handle.cy,
+                    }}
+                    onMouseDown={(event) =>
+                      startLabelResize(
+                        event,
+                        selectedLabelData,
+                        handle.corner
+                      )
+                    }
+                  />
+                ))}
 
               <svg
                 className="custom-object-layer"
