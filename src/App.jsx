@@ -2403,6 +2403,24 @@ function App() {
     setSelectedSpaces([])
   }
 
+  const nextUniqueSpaceLabel = (
+    usedLabels
+  ) => {
+    let n = 1
+
+    while (
+      usedLabels.has(
+        String(n).padStart(2, '0')
+      )
+    ) {
+      n++
+    }
+
+    const label = String(n).padStart(2, '0')
+    usedLabels.add(label)
+    return label
+  }
+
   const addSpace = (count) => {
     const total = count || 1
 
@@ -2467,12 +2485,19 @@ function App() {
       }
 
       const newSpaces = []
-      const spacesInLot = lotSpaces.length
+
+      const usedLabels = new Set(
+        lotSpaces.map((space) =>
+          space.label.trim().toLowerCase()
+        )
+      )
 
       let searchIndex = 0
 
       for (let i = 0; i < total; i++) {
-        const number = spacesInLot + i + 1
+        const label = nextUniqueSpaceLabel(
+          usedLabels
+        )
 
         let placedX = originX
         let placedY = originY
@@ -2514,10 +2539,7 @@ function App() {
           id: Date.now() + i,
           x: placedX,
           y: placedY,
-
-          label:
-            String(number).padStart(2, '0'),
-
+          label,
           rotation: 0,
           lotId: activeLotId,
         })
@@ -4606,6 +4628,18 @@ function App() {
     if (clipboard.type === 'spaces') {
       const newIds = []
 
+      const usedLabels = new Set(
+        spaces
+          .filter(
+            (space) =>
+              (space.lotId || 1) ===
+              activeLotId
+          )
+          .map((space) =>
+            space.label.trim().toLowerCase()
+          )
+      )
+
       const newItems = clipboard.items.map(
         (item, index) => {
           const id = Date.now() + index
@@ -4619,6 +4653,9 @@ function App() {
             ),
             y: snapToGrid(
               item.y + PASTE_OFFSET
+            ),
+            label: nextUniqueSpaceLabel(
+              usedLabels
             ),
             lotId: activeLotId,
           }
