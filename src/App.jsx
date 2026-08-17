@@ -1750,7 +1750,7 @@ function App() {
   const [snapTarget, setSnapTarget] = useState(null)
   const [isOverUnassignedZone, setIsOverUnassignedZone] = useState(false)
 
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(0.4)
   const [zoomOrigin, setZoomOrigin] = useState({
     x: 0,
     y: 0,
@@ -1783,6 +1783,11 @@ function App() {
   const clampZoom = (value) => {
     return Math.min(2, Math.max(0.4, value))
   }
+
+  // The zoom percentage shown to the user is relative to this value,
+  // not the raw internal scale, so the comfortable default zoom
+  // level reads as "100%" instead of an arbitrary number like "40%".
+  const ZOOM_DISPLAY_REFERENCE = 0.4
 
   const setZoomOriginAtPoint = (x, y) => {
     zoomOriginRef.current = { x, y }
@@ -2708,8 +2713,8 @@ function App() {
     setActiveLotId(newLot.id)
     setPan({ x: 0, y: 0 })
     panRef.current = { x: 0, y: 0 }
-    setZoom(1)
-    zoomRef.current = 1
+    setZoom(ZOOM_DISPLAY_REFERENCE)
+    zoomRef.current = ZOOM_DISPLAY_REFERENCE
     closeInspector()
     setSelectedSpaces([])
     setRenamingLotId(newLot.id)
@@ -2723,8 +2728,8 @@ function App() {
     setActiveLotId(lotId)
     setPan({ x: 0, y: 0 })
     panRef.current = { x: 0, y: 0 }
-    setZoom(1)
-    zoomRef.current = 1
+    setZoom(ZOOM_DISPLAY_REFERENCE)
+    zoomRef.current = ZOOM_DISPLAY_REFERENCE
     closeInspector()
     setSelectedSpaces([])
   }
@@ -3929,6 +3934,36 @@ function App() {
     })
   }
 
+  const rotateSelectedSpaces = () => {
+    const idsRequested =
+      selectedSpaces.length > 1
+        ? selectedSpaces
+        : selectedSpace
+        ? [selectedSpace]
+        : []
+
+    if (idsRequested.length === 0) {
+      return
+    }
+
+    pushHistory()
+
+    setSpaces((current) => {
+      return current.map((space) => {
+        if (idsRequested.includes(space.id)) {
+          return {
+            ...space,
+            rotation:
+              ((space.rotation || 0) + 45) %
+              360,
+          }
+        }
+
+        return space
+      })
+    })
+  }
+
   const deleteSelectedSpaces = () => {
     const idsRequested =
       selectedSpaces.length > 1
@@ -4188,6 +4223,25 @@ function App() {
     )
 
     setSelectedLabel(null)
+  }
+
+  const rotateLabel = (labelId) => {
+    pushHistory()
+
+    setLabels((current) => {
+      return current.map((label) => {
+        if (label.id === labelId) {
+          return {
+            ...label,
+            rotation:
+              ((label.rotation || 0) + 45) %
+              360,
+          }
+        }
+
+        return label
+      })
+    })
   }
 
   const startCustomObjectDrag = (
@@ -5945,6 +5999,9 @@ function App() {
                       top: label.y,
                       width: labelWidth,
                       height: labelHeight,
+                      transform: `rotate(${
+                        label.rotation || 0
+                      }deg)`,
                       fontSize:
                         computeLabelFontSize(
                           labelWidth,
@@ -6334,7 +6391,9 @@ function App() {
 
               <div className="zoom-value">
                 {Math.round(
-                  zoom * 100
+                  (zoom /
+                    ZOOM_DISPLAY_REFERENCE) *
+                    100
                 )}
                 %
               </div>
@@ -6641,9 +6700,62 @@ function App() {
             selectedAreaData ||
             selectedRoadData ||
             selectedLabelData ||
-            selectedCustomObjectData) && (
+            selectedCustomObjectData ||
+            selectedSpaces.length > 1) && (
             <aside className="inspector">
-              {selectedVehicleData ? (
+              {selectedSpaces.length > 1 ? (
+                <>
+                  <div className="inspector-header">
+                    <div>
+                      <span className="inspector-eyebrow">
+                        PARKING SPACES
+                      </span>
+
+                      <h2>
+                        {
+                          selectedSpaces.length
+                        }{' '}
+                        selected
+                      </h2>
+                    </div>
+
+                    <button
+                      className="close-button"
+                      onClick={
+                        closeInspector
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      ROTATION
+                    </label>
+
+                    <button
+                      className="rotate-space-button"
+                      onClick={
+                        rotateSelectedSpaces
+                      }
+                    >
+                      ⟳ Rotate all 45°
+                    </button>
+                  </div>
+
+                  <div className="inspector-actions">
+                    <button
+                      className="delete-button"
+                      onClick={
+                        deleteSelectedSpaces
+                      }
+                    >
+                      Delete selected
+                    </button>
+                  </div>
+                </>
+              ) : selectedVehicleData ? (
                 <>
                   <div className="inspector-header">
                     <div>
@@ -7070,6 +7182,23 @@ function App() {
                       className="space-name-input"
                       autoFocus
                     />
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      ROTATION
+                    </label>
+
+                    <button
+                      className="rotate-space-button"
+                      onClick={() =>
+                        rotateLabel(
+                          selectedLabelData.id
+                        )
+                      }
+                    >
+                      ⟳ Rotate 45°
+                    </button>
                   </div>
 
                   <div className="inspector-actions">
