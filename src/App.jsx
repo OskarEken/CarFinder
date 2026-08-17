@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
 import * as XLSX from 'xlsx'
+import QRCode from 'qrcode'
 
 const GRID_SIZE = 28
 const SPACE_WIDTH = 84
@@ -1178,6 +1179,7 @@ function SettingsPanel({
 
 function App() {
   const canvasRef = useRef(null)
+  const hasAutoJumped = useRef(false)
   const justFinishedSelecting = useRef(false)
   const justFinishedDraggingSpace = useRef(false)
   const spaceDragMovedRef = useRef(false)
@@ -1199,6 +1201,7 @@ function App() {
 
   const [selectedSpace, setSelectedSpace] = useState(null)
   const [selectedVehicle, setSelectedVehicle] = useState(null)
+  const [vehicleQrCode, setVehicleQrCode] = useState(null)
   const [selectedSpaces, setSelectedSpaces] = useState([])
   const [selectedArea, setSelectedArea] = useState(null)
   const [selectedRoad, setSelectedRoad] = useState(null)
@@ -1432,6 +1435,58 @@ function App() {
 
     loadMapData()
   }, [organization])
+
+  // If the page was opened via a car's QR code (a link with ?car=ID
+  // in it), jump straight to that vehicle once its data has loaded.
+  useEffect(() => {
+    if (
+      hasAutoJumped.current ||
+      !mapDataLoaded ||
+      vehicles.length === 0
+    ) {
+      return
+    }
+
+    const params = new URLSearchParams(
+      window.location.search
+    )
+
+    const carParam = params.get('car')
+
+    if (!carParam) {
+      return
+    }
+
+    const target = vehicles.find(
+      (vehicle) =>
+        String(vehicle.id) === carParam
+    )
+
+    if (target) {
+      hasAutoJumped.current = true
+      jumpToVehicle(target)
+    }
+  }, [mapDataLoaded, vehicles])
+
+  useEffect(() => {
+    if (!selectedVehicle) {
+      setVehicleQrCode(null)
+      return
+    }
+
+    const url = `${window.location.origin}${window.location.pathname}?car=${selectedVehicle}`
+
+    QRCode.toDataURL(url, {
+      width: 220,
+      margin: 1,
+    })
+      .then((dataUrl) => {
+        setVehicleQrCode(dataUrl)
+      })
+      .catch(() => {
+        setVehicleQrCode(null)
+      })
+  }, [selectedVehicle])
 
   useEffect(() => {
     if (!organization || !mapDataLoaded) {
@@ -7383,6 +7438,43 @@ function App() {
                       placeholder="NO MAKE / MODEL"
                       className="space-name-input"
                     />
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      QR CODE
+                    </label>
+
+                    {vehicleQrCode ? (
+                      <div className="vehicle-qr-block">
+                        <img
+                          src={vehicleQrCode}
+                          alt="QR code for this car"
+                          className="vehicle-qr-image"
+                        />
+
+                        <a
+                          href={vehicleQrCode}
+                          download={`car-${
+                            selectedVehicleData.vin ||
+                            selectedVehicleData.id
+                          }-qr.png`}
+                          className="add-car-cancel vehicle-qr-download"
+                        >
+                          Download QR code
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="field-hint">
+                        Generating QR code\u2026
+                      </div>
+                    )}
+
+                    <div className="field-hint">
+                      Print this and attach it to
+                      the key. Scanning it opens
+                      this car directly.
+                    </div>
                   </div>
 
                   <div className="detail-group">
