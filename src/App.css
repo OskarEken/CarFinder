@@ -53,6 +53,7 @@ button {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   background: #111820;
   color: #dfe6ee;
   border-right: 1px solid #222c36;

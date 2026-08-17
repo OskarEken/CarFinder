@@ -6605,78 +6605,6 @@ function App() {
                 )}
               </div>
 
-              <button
-                className="add-row-button"
-                onClick={addCarRow}
-              >
-                + Add another car
-              </button>
-
-              <div className="detail-group">
-                <label>
-                  SET STATUS FOR ALL
-                </label>
-
-                <select
-                  className="space-name-input"
-                  value={newCarStatus}
-                  onChange={(event) => {
-                    const value =
-                      event.target.value
-
-                    setNewCarStatus(value)
-
-                    setNewCarRows(
-                      (current) =>
-                        current.map(
-                          (row) => ({
-                            ...row,
-                            status: value,
-                          })
-                        )
-                    )
-                  }}
-                >
-                  <option value="reserved">
-                    Reserved
-                  </option>
-
-                  <option value="sold">
-                    Sold
-                  </option>
-
-                  <option value="waiting-pdi">
-                    Waiting for PDI
-                  </option>
-
-                  <option value="waiting-cleaning">
-                    Waiting for cleaning
-                  </option>
-
-                  <option value="cleaned">
-                    Cleaned
-                  </option>
-
-                  <option value="ready">
-                    Ready for delivery
-                  </option>
-
-                  <option value="demo">
-                    Demo
-                  </option>
-
-                  <option value="test-drive">
-                    Test drive
-                  </option>
-                </select>
-
-                <div className="field-hint">
-                  Sets the starting status for
-                  every car above. You can still
-                  change each one individually.
-                </div>
-              </div>
-
               <div className="add-car-actions">
                 <button
                   className="add-car-cancel"
@@ -6698,6 +6626,13 @@ function App() {
                     : 'Add car'}
                 </button>
               </div>
+
+              <button
+                className="add-row-button"
+                onClick={addCarRow}
+              >
+                + Add another car
+              </button>
             </aside>
           )}
 
