@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import { supabase } from './supabaseClient'
+import * as XLSX from 'xlsx'
 
 const GRID_SIZE = 28
 const SPACE_WIDTH = 84
@@ -1769,6 +1770,7 @@ function App() {
   const [showAddCar, setShowAddCar] = useState(false)
   const [addCarAnchor, setAddCarAnchor] = useState(null)
   const addCarButtonRef = useRef(null)
+  const importFileInputRef = useRef(null)
 
   const emptyCarRow = (status) => ({
     id: Math.random(),
@@ -2686,6 +2688,151 @@ function App() {
 
     setSelectedSpace(null)
     setSelectedSpaces([])
+  }
+
+  const handleImportFile = (event) => {
+    const file = event.target.files[0]
+
+    if (!file) {
+      return
+    }
+
+    const reader = new FileReader()
+
+    reader.onload = (loadEvent) => {
+      try {
+        const data = new Uint8Array(
+          loadEvent.target.result
+        )
+
+        const workbook = XLSX.read(data, {
+          type: 'array',
+        })
+
+        const firstSheetName =
+          workbook.SheetNames[0]
+
+        const sheet =
+          workbook.Sheets[firstSheetName]
+
+        const rows = XLSX.utils.sheet_to_json(
+          sheet,
+          { defval: '' }
+        )
+
+        const normalizeKey = (key) =>
+          key
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '')
+
+        const knownStatuses = new Set(
+          STATUS_LEGEND.map(
+            (item) => item.value
+          )
+        )
+
+        const imported = []
+        let skipped = 0
+
+        rows.forEach((row) => {
+          const normalizedRow = {}
+
+          Object.keys(row).forEach((key) => {
+            normalizedRow[
+              normalizeKey(key)
+            ] = row[key]
+          })
+
+          const vin = (
+            normalizedRow.vin ||
+            normalizedRow.vinnumber ||
+            ''
+          )
+            .toString()
+            .trim()
+            .toUpperCase()
+
+          const registration = (
+            normalizedRow.registration ||
+            normalizedRow.reg ||
+            normalizedRow.regnr ||
+            normalizedRow.plate ||
+            ''
+          )
+            .toString()
+            .trim()
+            .toUpperCase()
+
+          const make = (
+            normalizedRow.make ||
+            normalizedRow.makemodel ||
+            normalizedRow.model ||
+            ''
+          )
+            .toString()
+            .trim()
+
+          const statusRaw = (
+            normalizedRow.status || ''
+          )
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+
+          const status = knownStatuses.has(
+            statusRaw
+          )
+            ? statusRaw
+            : 'ready'
+
+          if (!vin && !registration) {
+            skipped++
+            return
+          }
+
+          imported.push({
+            id:
+              Date.now() + imported.length,
+            vin,
+            registration,
+            make,
+            status,
+            spaceId: null,
+          })
+        })
+
+        if (imported.length > 0) {
+          pushHistory()
+
+          setVehicles((current) => [
+            ...current,
+            ...imported,
+          ])
+        }
+
+        alert(
+          `Imported ${imported.length} car${
+            imported.length === 1 ? '' : 's'
+          }.` +
+            (skipped > 0
+              ? ` Skipped ${skipped} row${
+                  skipped === 1 ? '' : 's'
+                } with no VIN or registration.`
+              : '')
+        )
+      } catch (error) {
+        alert(
+          'Could not read that file. Make sure it\u2019s a valid .csv or .xlsx file with VIN / Registration / Make / Status columns.'
+        )
+      }
+
+      event.target.value = ''
+    }
+
+    reader.readAsArrayBuffer(file)
   }
 
   const updateVehicleStatus = (event) => {
@@ -5448,6 +5595,27 @@ function App() {
             </span>
 
             Add car
+          </button>
+
+          <input
+            ref={importFileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
+          />
+
+          <button
+            className="inline-add-button"
+            onClick={() =>
+              importFileInputRef.current.click()
+            }
+          >
+            <span className="inline-add-icon">
+              ⇧
+            </span>
+
+            Import Excel/CSV
           </button>
         </div>
 
