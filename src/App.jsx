@@ -3174,6 +3174,11 @@ function App() {
       )
 
       const selected = spaces
+        .filter(
+          (space) =>
+            (space.lotId || 1) ===
+            activeLotId
+        )
         .filter((space) => {
           const spaceRight =
             space.x +
