@@ -2349,6 +2349,7 @@ function App() {
         width: 84,
         height: 32,
         text: 'Label',
+        color: OBJECT_COLORS[0],
         lotId: activeLotId,
       }
 
@@ -4352,6 +4353,23 @@ function App() {
     })
   }
 
+  const updateLabelColor = (color) => {
+    pushHistory()
+
+    setLabels((current) => {
+      return current.map((label) => {
+        if (label.id === selectedLabel) {
+          return {
+            ...label,
+            color,
+          }
+        }
+
+        return label
+      })
+    })
+  }
+
   const deleteLabel = () => {
     pushHistory()
 
@@ -6127,6 +6145,10 @@ function App() {
                 const isLabelSelected =
                   selectedLabel === label.id
 
+                const labelColor =
+                  label.color ||
+                  OBJECT_COLORS[0]
+
                 return (
                   <div
                     key={label.id}
@@ -6150,6 +6172,15 @@ function App() {
                           labelHeight,
                           label.text
                         ),
+                      borderColor: isLabelSelected
+                        ? '#3d6f9d'
+                        : labelColor,
+                      background: hexToRgba(
+                        isLabelSelected
+                          ? '#3d6f9d'
+                          : labelColor,
+                        0.14
+                      ),
                       cursor: showToolsPanel
                         ? 'grab'
                         : 'default',
@@ -7379,6 +7410,38 @@ function App() {
                       className="space-name-input"
                       autoFocus
                     />
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      COLOR
+                    </label>
+
+                    <div className="color-swatches">
+                      {OBJECT_COLORS.map(
+                        (color) => (
+                          <button
+                            key={color}
+                            className={
+                              'color-swatch' +
+                              (selectedLabelData.color ===
+                              color
+                                ? ' active'
+                                : '')
+                            }
+                            style={{
+                              background:
+                                color,
+                            }}
+                            onClick={() =>
+                              updateLabelColor(
+                                color
+                              )
+                            }
+                          />
+                        )
+                      )}
+                    </div>
                   </div>
 
                   <div className="detail-group">
