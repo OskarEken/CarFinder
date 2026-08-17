@@ -8,11 +8,11 @@ const SPACE_HEIGHT = 140
 const SNAP_DISTANCE = 55
 
 const initialSpaces = [
-  { id: 1, x: 84, y: 112, label: '01', rotation: 0, lotId: 1 },
-  { id: 2, x: 168, y: 112, label: '02', rotation: 0, lotId: 1 },
-  { id: 3, x: 252, y: 112, label: '03', rotation: 0, lotId: 1 },
-  { id: 4, x: 336, y: 112, label: '04', rotation: 0, lotId: 1 },
-  { id: 5, x: 420, y: 112, label: '05', rotation: 0, lotId: 1 },
+  { id: 1, x: 84, y: 112, label: '', rotation: 0, lotId: 1 },
+  { id: 2, x: 168, y: 112, label: '', rotation: 0, lotId: 1 },
+  { id: 3, x: 252, y: 112, label: '', rotation: 0, lotId: 1 },
+  { id: 4, x: 336, y: 112, label: '', rotation: 0, lotId: 1 },
+  { id: 5, x: 420, y: 112, label: '', rotation: 0, lotId: 1 },
 ]
 
 const initialVehicles = []
@@ -1409,6 +1409,8 @@ function App() {
             width: label.width,
             height: label.height,
             text: label.text,
+            rotation: label.rotation || 0,
+            color: label.color,
             lotId: label.lot_id,
           })
         )
@@ -1606,6 +1608,8 @@ function App() {
               width: label.width,
               height: label.height,
               text: label.text,
+              rotation: label.rotation || 0,
+              color: label.color,
             }))
           )
       }
@@ -2421,6 +2425,54 @@ function App() {
     return label
   }
 
+  const sortSpaceNumbers = () => {
+    pushHistory()
+
+    setSpaces((current) => {
+      const lotSpaces = current.filter(
+        (space) =>
+          (space.lotId || 1) === activeLotId
+      )
+
+      const otherSpaces = current.filter(
+        (space) =>
+          (space.lotId || 1) !== activeLotId
+      )
+
+      const ROW_TOLERANCE = 50
+
+      const sorted = [...lotSpaces].sort(
+        (a, b) => {
+          const rowA = Math.round(
+            a.y / ROW_TOLERANCE
+          )
+
+          const rowB = Math.round(
+            b.y / ROW_TOLERANCE
+          )
+
+          if (rowA !== rowB) {
+            return rowA - rowB
+          }
+
+          return a.x - b.x
+        }
+      )
+
+      const renumbered = sorted.map(
+        (space, index) => ({
+          ...space,
+          label: String(index + 1).padStart(
+            2,
+            '0'
+          ),
+        })
+      )
+
+      return [...otherSpaces, ...renumbered]
+    })
+  }
+
   const addSpace = (count) => {
     const total = count || 1
 
@@ -2486,18 +2538,10 @@ function App() {
 
       const newSpaces = []
 
-      const usedLabels = new Set(
-        lotSpaces.map((space) =>
-          space.label.trim().toLowerCase()
-        )
-      )
-
       let searchIndex = 0
 
       for (let i = 0; i < total; i++) {
-        const label = nextUniqueSpaceLabel(
-          usedLabels
-        )
+        const label = ''
 
         let placedX = originX
         let placedY = originY
@@ -4628,18 +4672,6 @@ function App() {
     if (clipboard.type === 'spaces') {
       const newIds = []
 
-      const usedLabels = new Set(
-        spaces
-          .filter(
-            (space) =>
-              (space.lotId || 1) ===
-              activeLotId
-          )
-          .map((space) =>
-            space.label.trim().toLowerCase()
-          )
-      )
-
       const newItems = clipboard.items.map(
         (item, index) => {
           const id = Date.now() + index
@@ -4653,9 +4685,6 @@ function App() {
             ),
             y: snapToGrid(
               item.y + PASTE_OFFSET
-            ),
-            label: nextUniqueSpaceLabel(
-              usedLabels
             ),
             lotId: activeLotId,
           }
@@ -5484,6 +5513,18 @@ function App() {
                   className="tool-count-input"
                 />
               </div>
+
+              <button
+                className="tool"
+                onClick={sortSpaceNumbers}
+                title="Number all spaces on this lot based on where they are on the map"
+              >
+                <span className="tool-icon">
+                  ⇅
+                </span>
+
+                Sort numbers
+              </button>
 
               <button
                 className={
