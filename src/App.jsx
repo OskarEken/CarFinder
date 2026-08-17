@@ -2697,6 +2697,102 @@ function App() {
     })
   }
 
+  const centerViewOnLot = (lotId) => {
+    const canvasEl = canvasRef.current
+
+    const points = []
+
+    spaces
+      .filter((item) => item.lotId === lotId)
+      .forEach((item) => {
+        points.push({ x: item.x, y: item.y })
+        points.push({
+          x: item.x + SPACE_WIDTH,
+          y: item.y + SPACE_HEIGHT,
+        })
+      })
+
+    areas
+      .filter((item) => item.lotId === lotId)
+      .forEach((item) => {
+        points.push({ x: item.x, y: item.y })
+        points.push({
+          x: item.x + item.width,
+          y: item.y + item.height,
+        })
+      })
+
+    roads
+      .filter((item) => item.lotId === lotId)
+      .forEach((item) => {
+        points.push({ x: item.x, y: item.y })
+        points.push({
+          x: item.x + item.width,
+          y: item.y + item.height,
+        })
+      })
+
+    labels
+      .filter((item) => item.lotId === lotId)
+      .forEach((item) => {
+        points.push({ x: item.x, y: item.y })
+        points.push({
+          x:
+            item.x + (item.width || 84),
+          y:
+            item.y + (item.height || 32),
+        })
+      })
+
+    customObjects
+      .filter((item) => item.lotId === lotId)
+      .forEach((item) => {
+        item.points.forEach((point) => {
+          points.push(point)
+        })
+      })
+
+    if (points.length === 0 || !canvasEl) {
+      setPan({ x: 0, y: 0 })
+      panRef.current = { x: 0, y: 0 }
+      return
+    }
+
+    const minX = Math.min(
+      ...points.map((point) => point.x)
+    )
+
+    const maxX = Math.max(
+      ...points.map((point) => point.x)
+    )
+
+    const minY = Math.min(
+      ...points.map((point) => point.y)
+    )
+
+    const maxY = Math.max(
+      ...points.map((point) => point.y)
+    )
+
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+
+    const rect =
+      canvasEl.getBoundingClientRect()
+
+    const nextPan = {
+      x:
+        rect.width / 2 -
+        centerX * ZOOM_DISPLAY_REFERENCE,
+      y:
+        rect.height / 2 -
+        centerY * ZOOM_DISPLAY_REFERENCE,
+    }
+
+    setPan(nextPan)
+    panRef.current = nextPan
+  }
+
   const addLot = () => {
     pushHistory()
 
@@ -2711,10 +2807,9 @@ function App() {
     ])
 
     setActiveLotId(newLot.id)
-    setPan({ x: 0, y: 0 })
-    panRef.current = { x: 0, y: 0 }
     setZoom(ZOOM_DISPLAY_REFERENCE)
     zoomRef.current = ZOOM_DISPLAY_REFERENCE
+    centerViewOnLot(newLot.id)
     closeInspector()
     setSelectedSpaces([])
     setRenamingLotId(newLot.id)
@@ -2726,10 +2821,9 @@ function App() {
     }
 
     setActiveLotId(lotId)
-    setPan({ x: 0, y: 0 })
-    panRef.current = { x: 0, y: 0 }
     setZoom(ZOOM_DISPLAY_REFERENCE)
     zoomRef.current = ZOOM_DISPLAY_REFERENCE
+    centerViewOnLot(lotId)
     closeInspector()
     setSelectedSpaces([])
   }
@@ -3624,7 +3718,13 @@ function App() {
       let closestSpace = null
       let closestDistance = Infinity
 
-      spaces.forEach((space) => {
+      spaces
+        .filter(
+          (space) =>
+            (space.lotId || 1) ===
+            activeLotId
+        )
+        .forEach((space) => {
         const centerX =
           space.x +
           SPACE_WIDTH / 2
