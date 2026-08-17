@@ -1739,6 +1739,7 @@ function App() {
   const [resizingArea, setResizingArea] = useState(null)
   const [resizingRoad, setResizingRoad] = useState(null)
   const [resizingLabel, setResizingLabel] = useState(null)
+  const [rotatingLabel, setRotatingLabel] = useState(null)
   const [draggingRoad, setDraggingRoad] = useState(null)
 
   const [selectionBox, setSelectionBox] = useState(null)
@@ -3488,6 +3489,38 @@ function App() {
       return
     }
 
+    if (rotatingLabel) {
+      const angleRad = Math.atan2(
+        position.x - rotatingLabel.centerX,
+        -(
+          position.y -
+          rotatingLabel.centerY
+        )
+      )
+
+      let angleDeg =
+        (angleRad * 180) / Math.PI
+
+      if (angleDeg < 0) {
+        angleDeg += 360
+      }
+
+      setLabels((current) => {
+        return current.map((label) => {
+          if (label.id !== rotatingLabel.id) {
+            return label
+          }
+
+          return {
+            ...label,
+            rotation: angleDeg,
+          }
+        })
+      })
+
+      return
+    }
+
     if (draggingArea) {
       const newX = snapToGrid(
         position.x - draggingArea.offsetX
@@ -3873,6 +3906,7 @@ function App() {
     setResizingRoad(null)
     setDraggingLabel(null)
     setResizingLabel(null)
+    setRotatingLabel(null)
     setDraggingCustomObject(null)
     setDraggingVertex(null)
     setPreviewPosition(null)
@@ -4330,22 +4364,25 @@ function App() {
     setSelectedLabel(null)
   }
 
-  const rotateLabel = (labelId) => {
+  const startLabelRotate = (event, label) => {
+    if (!showToolsPanel) {
+      return
+    }
+
+    event.stopPropagation()
+
     pushHistory()
 
-    setLabels((current) => {
-      return current.map((label) => {
-        if (label.id === labelId) {
-          return {
-            ...label,
-            rotation:
-              ((label.rotation || 0) + 45) %
-              360,
-          }
-        }
+    const centerX =
+      label.x + (label.width || 84) / 2
 
-        return label
-      })
+    const centerY =
+      label.y + (label.height || 32) / 2
+
+    setRotatingLabel({
+      id: label.id,
+      centerX,
+      centerY,
     })
   }
 
@@ -6155,6 +6192,61 @@ function App() {
 
               {showToolsPanel &&
                 selectedLabelData &&
+                (() => {
+                  const labelW =
+                    selectedLabelData.width ||
+                    84
+
+                  const labelH =
+                    selectedLabelData.height ||
+                    32
+
+                  const cx =
+                    selectedLabelData.x +
+                    labelW / 2
+
+                  const cy =
+                    selectedLabelData.y +
+                    labelH / 2
+
+                  const angle =
+                    ((selectedLabelData.rotation ||
+                      0) *
+                      Math.PI) /
+                    180
+
+                  const handleDistance =
+                    labelH / 2 + 22
+
+                  const handleX =
+                    cx +
+                    handleDistance *
+                      Math.sin(angle)
+
+                  const handleY =
+                    cy -
+                    handleDistance *
+                      Math.cos(angle)
+
+                  return (
+                    <div
+                      className="label-rotate-handle"
+                      style={{
+                        left: handleX,
+                        top: handleY,
+                      }}
+                      onMouseDown={(event) =>
+                        startLabelRotate(
+                          event,
+                          selectedLabelData
+                        )
+                      }
+                    />
+                  )
+                })()}
+
+              {showToolsPanel &&
+                selectedLabelData &&
                 [
                   { corner: 'nw', cx: 0, cy: 0 },
                   { corner: 'ne', cx: 1, cy: 0 },
@@ -7294,16 +7386,11 @@ function App() {
                       ROTATION
                     </label>
 
-                    <button
-                      className="rotate-space-button"
-                      onClick={() =>
-                        rotateLabel(
-                          selectedLabelData.id
-                        )
-                      }
-                    >
-                      ⟳ Rotate 45°
-                    </button>
+                    <div className="field-hint">
+                      Drag the small round handle
+                      above the label on the map
+                      to rotate it freely.
+                    </div>
                   </div>
 
                   <div className="inspector-actions">
