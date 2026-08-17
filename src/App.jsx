@@ -2978,6 +2978,37 @@ function App() {
     })
   }
 
+  const printVehicleQr = (qrDataUrl, label) => {
+    const printWindow = window.open(
+      '',
+      '_blank'
+    )
+
+    if (!printWindow) {
+      return
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>QR - ${label}</title>
+        </head>
+        <body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;">
+          <img
+            src="${qrDataUrl}"
+            style="width:280px;height:280px;"
+            onload="window.print()"
+          />
+          <div style="margin-top:12px;font-size:14px;color:#333;">
+            ${label}
+          </div>
+        </body>
+      </html>
+    `)
+
+    printWindow.document.close()
+  }
+
   const moveVehicleToUnassigned = () => {
     if (!selectedVehicle) {
       return
@@ -7463,6 +7494,21 @@ function App() {
                         >
                           Download QR code
                         </a>
+
+                        <button
+                          type="button"
+                          className="add-car-cancel vehicle-qr-download"
+                          onClick={() =>
+                            printVehicleQr(
+                              vehicleQrCode,
+                              selectedVehicleData.vin ||
+                                selectedVehicleData.registration ||
+                                'Car'
+                            )
+                          }
+                        >
+                          Print QR code
+                        </button>
                       </div>
                     ) : (
                       <div className="field-hint">
