@@ -185,6 +185,7 @@ const OBJECT_COLORS = [
 ]
 
 const STATUS_LEGEND = [
+  { value: 'none', label: '\u2013 (not set)', color: '#9aa4ac' },
   { value: 'reserved', label: 'Reserved', color: '#eab308' },
   { value: 'sold', label: 'Sold', color: '#dc2626' },
   { value: 'waiting-pdi', label: 'Waiting for PDI', color: '#f97316' },
@@ -1777,14 +1778,14 @@ function App() {
     registration: '',
     vin: '',
     make: '',
-    status: status || 'ready',
+    status: status || 'none',
   })
 
   const [newCarRows, setNewCarRows] = useState([
-    emptyCarRow('ready'),
+    emptyCarRow('none'),
   ])
 
-  const [newCarStatus, setNewCarStatus] = useState('ready')
+  const [newCarStatus, setNewCarStatus] = useState('none')
   const [spaceAddCount, setSpaceAddCount] = useState(1)
 
   const clampZoom = (value) => {
@@ -2677,8 +2678,8 @@ function App() {
       ...newVehicles,
     ])
 
-    setNewCarRows([emptyCarRow('ready')])
-    setNewCarStatus('ready')
+    setNewCarRows([emptyCarRow('none')])
+    setNewCarStatus('none')
 
     setShowAddCar(false)
 
@@ -2786,7 +2787,7 @@ function App() {
             statusRaw
           )
             ? statusRaw
-            : 'ready'
+            : 'none'
 
           if (!vin && !registration) {
             skipped++
@@ -5227,6 +5228,7 @@ function App() {
     )
 
   const STATUS_SORT_ORDER = [
+    'none',
     'sold',
     'reserved',
     'demo',
@@ -7101,6 +7103,10 @@ function App() {
                           )
                         }
                       >
+                        <option value="none">
+                          -
+                        </option>
+
                         <option value="reserved">
                           Reserved
                         </option>
@@ -7326,6 +7332,10 @@ function App() {
                         updateVehicleStatus
                       }
                     >
+                      <option value="none">
+                        -
+                      </option>
+
                       <option value="reserved">
                         Reserved
                       </option>

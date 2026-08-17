@@ -395,6 +395,14 @@ button {
   border-right-color: #db2777;
 }
 
+.vehicle-list-item.status-none {
+  border-right-color: #9aa4ac;
+}
+
+.vehicle-list-item.status-none:hover {
+  border-right-color: #9aa4ac;
+}
+
 .vehicle-list-top {
   display: flex;
   align-items: center;
@@ -1355,6 +1363,10 @@ button {
   background: rgba(219, 39, 119, 0.5);
 }
 
+.parking-space.status-none {
+  background: rgba(154, 164, 172, 0.5);
+}
+
 /* SELECTION */
 
 .parking-space.selected {
@@ -1810,6 +1822,10 @@ button {
 
 .vehicle-status-dot.status-dot-test-drive {
   background: #db2777;
+}
+
+.vehicle-status-dot.status-dot-none {
+  background: #9aa4ac;
 }
 
 /* SPACE INSPECTOR */
