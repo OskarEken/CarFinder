@@ -355,20 +355,12 @@ button {
   border-right-color: #f97316;
 }
 
-.vehicle-list-item.status-waiting-cleaning {
+.vehicle-list-item.status-cleaning {
   border-right-color: #8b5cf6;
 }
 
-.vehicle-list-item.status-waiting-cleaning:hover {
+.vehicle-list-item.status-cleaning:hover {
   border-right-color: #8b5cf6;
-}
-
-.vehicle-list-item.status-cleaned {
-  border-right-color: #3b82f6;
-}
-
-.vehicle-list-item.status-cleaned:hover {
-  border-right-color: #3b82f6;
 }
 
 .vehicle-list-item.status-ready {
@@ -377,22 +369,6 @@ button {
 
 .vehicle-list-item.status-ready:hover {
   border-right-color: #22c55e;
-}
-
-.vehicle-list-item.status-demo {
-  border-right-color: #0891b2;
-}
-
-.vehicle-list-item.status-demo:hover {
-  border-right-color: #0891b2;
-}
-
-.vehicle-list-item.status-test-drive {
-  border-right-color: #db2777;
-}
-
-.vehicle-list-item.status-test-drive:hover {
-  border-right-color: #db2777;
 }
 
 .vehicle-list-item.status-none {
@@ -1343,24 +1319,12 @@ button {
   background: rgba(249, 115, 22, 0.5);
 }
 
-.parking-space.status-waiting-cleaning {
+.parking-space.status-cleaning {
   background: rgba(139, 92, 246, 0.5);
-}
-
-.parking-space.status-cleaned {
-  background: rgba(59, 130, 246, 0.5);
 }
 
 .parking-space.status-ready {
   background: rgba(34, 197, 94, 0.5);
-}
-
-.parking-space.status-demo {
-  background: rgba(8, 145, 178, 0.5);
-}
-
-.parking-space.status-test-drive {
-  background: rgba(219, 39, 119, 0.5);
 }
 
 .parking-space.status-none {
@@ -1804,24 +1768,12 @@ button {
   background: #f97316;
 }
 
-.vehicle-status-dot.status-dot-waiting-cleaning {
+.vehicle-status-dot.status-dot-cleaning {
   background: #8b5cf6;
-}
-
-.vehicle-status-dot.status-dot-cleaned {
-  background: #3b82f6;
 }
 
 .vehicle-status-dot.status-dot-ready {
   background: #22c55e;
-}
-
-.vehicle-status-dot.status-dot-demo {
-  background: #0891b2;
-}
-
-.vehicle-status-dot.status-dot-test-drive {
-  background: #db2777;
 }
 
 .vehicle-status-dot.status-dot-none {
