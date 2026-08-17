@@ -2856,6 +2856,73 @@ function App() {
     })
   }
 
+  const updateVehicleVin = (event) => {
+    const newVin = event.target.value
+
+    if (!selectedVehicle) {
+      return
+    }
+
+    setVehicles((current) => {
+      return current.map((vehicle) => {
+        if (vehicle.id === selectedVehicle) {
+          return {
+            ...vehicle,
+            vin: newVin.toUpperCase(),
+          }
+        }
+
+        return vehicle
+      })
+    })
+  }
+
+  const updateVehicleRegistration = (
+    event
+  ) => {
+    const newRegistration =
+      event.target.value
+
+    if (!selectedVehicle) {
+      return
+    }
+
+    setVehicles((current) => {
+      return current.map((vehicle) => {
+        if (vehicle.id === selectedVehicle) {
+          return {
+            ...vehicle,
+            registration:
+              newRegistration.toUpperCase(),
+          }
+        }
+
+        return vehicle
+      })
+    })
+  }
+
+  const updateVehicleMake = (event) => {
+    const newMake = event.target.value
+
+    if (!selectedVehicle) {
+      return
+    }
+
+    setVehicles((current) => {
+      return current.map((vehicle) => {
+        if (vehicle.id === selectedVehicle) {
+          return {
+            ...vehicle,
+            make: newMake,
+          }
+        }
+
+        return vehicle
+      })
+    })
+  }
+
   const moveVehicleToUnassigned = () => {
     if (!selectedVehicle) {
       return
@@ -7266,12 +7333,18 @@ function App() {
                       VIN NUMBER
                     </label>
 
-                    <div className="detail-value vin">
-                      {
-                        selectedVehicleData.vin ||
-                        'NO VIN'
+                    <input
+                      type="text"
+                      value={
+                        selectedVehicleData.vin
                       }
-                    </div>
+                      onChange={
+                        updateVehicleVin
+                      }
+                      onFocus={pushHistory}
+                      placeholder="NO VIN"
+                      className="space-name-input"
+                    />
                   </div>
 
                   <div className="detail-group">
@@ -7279,12 +7352,18 @@ function App() {
                       REGISTRATION NUMBER
                     </label>
 
-                    <div className="detail-value">
-                      {
-                        selectedVehicleData.registration ||
-                        'NO REGISTRATION'
+                    <input
+                      type="text"
+                      value={
+                        selectedVehicleData.registration
                       }
-                    </div>
+                      onChange={
+                        updateVehicleRegistration
+                      }
+                      onFocus={pushHistory}
+                      placeholder="NO REGISTRATION"
+                      className="space-name-input"
+                    />
                   </div>
 
                   <div className="detail-group">
@@ -7292,12 +7371,18 @@ function App() {
                       MAKE & MODEL
                     </label>
 
-                    <div className="detail-value">
-                      {
-                        selectedVehicleData.make ||
-                        'NO MAKE / MODEL'
+                    <input
+                      type="text"
+                      value={
+                        selectedVehicleData.make
                       }
-                    </div>
+                      onChange={
+                        updateVehicleMake
+                      }
+                      onFocus={pushHistory}
+                      placeholder="NO MAKE / MODEL"
+                      className="space-name-input"
+                    />
                   </div>
 
                   <div className="detail-group">
