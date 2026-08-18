@@ -375,6 +375,11 @@ function LoginScreen() {
       REMEMBER_ME_KEY,
       rememberMe ? 'true' : 'false'
     )
+
+    sessionStorage.setItem(
+      'justCreatedAccount',
+      '1'
+    )
   }
 
   const handleSubmit = async (event) => {
@@ -1222,6 +1227,7 @@ function App() {
   const [activeLotId, setActiveLotId] = useState(1)
 
   const [session, setSession] = useState(null)
+  const [showAccountCreatedBanner, setShowAccountCreatedBanner] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
@@ -1257,6 +1263,28 @@ function App() {
       authListener.subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (!session) {
+      return
+    }
+
+    const justCreated = sessionStorage.getItem(
+      'justCreatedAccount'
+    )
+
+    if (justCreated) {
+      sessionStorage.removeItem(
+        'justCreatedAccount'
+      )
+
+      setShowAccountCreatedBanner(true)
+
+      setTimeout(() => {
+        setShowAccountCreatedBanner(false)
+      }, 3500)
+    }
+  }, [session])
 
   const [membership, setMembership] = useState(null)
   const [organization, setOrganization] = useState(null)
@@ -5484,6 +5512,13 @@ function App() {
         handleMouseUp
       }
     >
+      {showAccountCreatedBanner && (
+        <div className="account-created-banner">
+          ✓ Account created! Welcome to
+          Car Finder.
+        </div>
+      )}
+
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-logo">
