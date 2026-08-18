@@ -1185,6 +1185,16 @@ function SettingsPanel({
 function App() {
   const canvasRef = useRef(null)
   const hasAutoJumped = useRef(false)
+
+  const lastLocalSaveRef = useRef({
+    lots: 0,
+    spaces: 0,
+    vehicles: 0,
+    areas: 0,
+    roads: 0,
+    labels: 0,
+    customObjects: 0,
+  })
   const justFinishedSelecting = useRef(false)
   const justFinishedDraggingSpace = useRef(false)
   const spaceDragMovedRef = useRef(false)
@@ -1522,6 +1532,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.lots =
+        Date.now()
+
       await supabase
         .from('lots')
         .delete()
@@ -1547,6 +1560,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.spaces =
+        Date.now()
+
       await supabase
         .from('spaces')
         .delete()
@@ -1576,6 +1592,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.vehicles =
+        Date.now()
+
       await supabase
         .from('vehicles')
         .delete()
@@ -1608,6 +1627,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.areas =
+        Date.now()
+
       await supabase
         .from('map_areas')
         .delete()
@@ -1641,6 +1663,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.roads =
+        Date.now()
+
       await supabase
         .from('map_roads')
         .delete()
@@ -1672,6 +1697,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.labels =
+        Date.now()
+
       await supabase
         .from('map_labels')
         .delete()
@@ -1706,6 +1734,9 @@ function App() {
     }
 
     const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.customObjects =
+        Date.now()
+
       await supabase
         .from('map_custom_objects')
         .delete()
@@ -1733,6 +1764,263 @@ function App() {
     organization,
     mapDataLoaded,
   ])
+
+  useEffect(() => {
+    if (!organization) {
+      return
+    }
+
+    const RECENT_SAVE_WINDOW = 1500
+
+    const wasRecentLocalSave = (key) => {
+      const lastSave =
+        lastLocalSaveRef.current[key]
+
+      return (
+        Date.now() - lastSave <
+        RECENT_SAVE_WINDOW
+      )
+    }
+
+    const reloadLots = async () => {
+      if (wasRecentLocalSave('lots')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('lots')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      if (data && data.length > 0) {
+        setLots(
+          data.map((lot) => ({
+            id: lot.id,
+            name: lot.name,
+          }))
+        )
+      }
+    }
+
+    const reloadSpaces = async () => {
+      if (wasRecentLocalSave('spaces')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('spaces')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setSpaces(
+        (data || []).map((space) => ({
+          id: space.id,
+          x: space.x,
+          y: space.y,
+          label: space.label,
+          rotation: space.rotation,
+          lotId: space.lot_id,
+        }))
+      )
+    }
+
+    const reloadVehicles = async () => {
+      if (wasRecentLocalSave('vehicles')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setVehicles(
+        (data || []).map((vehicle) => ({
+          id: vehicle.id,
+          registration:
+            vehicle.registration,
+          vin: vehicle.vin,
+          make: vehicle.make,
+          status: vehicle.status,
+          spaceId: vehicle.space_id,
+        }))
+      )
+    }
+
+    const reloadAreas = async () => {
+      if (wasRecentLocalSave('areas')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('map_areas')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setAreas(
+        (data || []).map((area) => ({
+          id: area.id,
+          x: area.x,
+          y: area.y,
+          width: area.width,
+          height: area.height,
+          label: area.label,
+          color: area.color,
+          lotId: area.lot_id,
+        }))
+      )
+    }
+
+    const reloadRoads = async () => {
+      if (wasRecentLocalSave('roads')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('map_roads')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setRoads(
+        computeGroupsPerLot(
+          (data || []).map((road) => ({
+            id: road.id,
+            x: road.x,
+            y: road.y,
+            width: road.width,
+            height: road.height,
+            lotId: road.lot_id,
+          }))
+        )
+      )
+    }
+
+    const reloadLabels = async () => {
+      if (wasRecentLocalSave('labels')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('map_labels')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setLabels(
+        (data || []).map((label) => ({
+          id: label.id,
+          x: label.x,
+          y: label.y,
+          width: label.width,
+          height: label.height,
+          text: label.text,
+          rotation: label.rotation || 0,
+          color: label.color,
+          lotId: label.lot_id,
+        }))
+      )
+    }
+
+    const reloadCustomObjects = async () => {
+      if (wasRecentLocalSave('customObjects')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('map_custom_objects')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setCustomObjects(
+        (data || []).map((obj) => ({
+          id: obj.id,
+          label: obj.label,
+          color: obj.color,
+          points: obj.points,
+          lotId: obj.lot_id,
+        }))
+      )
+    }
+
+    const filter = `org_id=eq.${organization.id}`
+
+    const channel = supabase
+      .channel('map-data-' + organization.id)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lots',
+          filter,
+        },
+        reloadLots
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'spaces',
+          filter,
+        },
+        reloadSpaces
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicles',
+          filter,
+        },
+        reloadVehicles
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'map_areas',
+          filter,
+        },
+        reloadAreas
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'map_roads',
+          filter,
+        },
+        reloadRoads
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'map_labels',
+          filter,
+        },
+        reloadLabels
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'map_custom_objects',
+          filter,
+        },
+        reloadCustomObjects
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [organization])
 
   const loadMembership = async (userId) => {
     setOrgLoading(true)
