@@ -3,6 +3,7 @@ import './App.css'
 import { supabase } from './supabaseClient'
 import * as XLSX from 'xlsx'
 import QRCode from 'qrcode'
+import jsQR from 'jsqr'
 
 const GRID_SIZE = 28
 const SPACE_WIDTH = 84
@@ -1203,6 +1204,11 @@ function App() {
   const areaDrawStartRef = useRef(null)
   const roadDrawStartRef = useRef(null)
   const pinchRef = useRef(null)
+  const panTouchRef = useRef(null)
+  const scannerVideoRef = useRef(null)
+  const scannerCanvasRef = useRef(null)
+  const scannerStreamRef = useRef(null)
+  const scannerLoopRef = useRef(null)
   const zoomRef = useRef(1)
   const zoomOriginRef = useRef({ x: 0, y: 0 })
   const panRef = useRef({ x: 0, y: 0 })
@@ -1302,6 +1308,8 @@ function App() {
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scannerError, setScannerError] = useState(null)
   const [mapDataLoaded, setMapDataLoaded] = useState(false)
 
   useEffect(() => {
@@ -2294,6 +2302,8 @@ function App() {
 
     const handleTouchStart = (event) => {
       if (event.touches.length === 2) {
+        panTouchRef.current = null
+
         const midpoint = getTouchMidpoint(event.touches)
 
         setZoomOriginAtPoint(
@@ -2306,6 +2316,49 @@ function App() {
           zoomStart: zoomRef.current,
           originX: midpoint.x,
           originY: midpoint.y,
+        }
+
+        return
+      }
+
+      if (event.touches.length === 1) {
+        const target = event.target
+
+        const isOnInteractiveItem =
+          target.closest &&
+          (target.closest('.parking-space') ||
+            target.closest('.car') ||
+            target.closest('.map-area') ||
+            target.closest('.map-road') ||
+            target.closest('.map-label') ||
+            target.closest(
+              '.custom-object-layer'
+            ) ||
+            target.closest(
+              '.resize-handle'
+            ) ||
+            target.closest(
+              '.label-rotate-handle'
+            ) ||
+            target.closest(
+              '.zoom-controls'
+            ) ||
+            target.closest(
+              '.status-legend'
+            ) ||
+            target.closest(
+              '.canvas-status'
+            ) ||
+            target.closest('.yard-title'))
+
+        if (isOnInteractiveItem) {
+          return
+        }
+
+        panTouchRef.current = {
+          startX: event.touches[0].clientX,
+          startY: event.touches[0].clientY,
+          startPan: panRef.current,
         }
       }
     }
@@ -2330,12 +2383,45 @@ function App() {
           midpoint.x,
           midpoint.y
         )
+
+        return
+      }
+
+      if (
+        event.touches.length === 1 &&
+        panTouchRef.current
+      ) {
+        event.preventDefault()
+
+        const deltaX =
+          event.touches[0].clientX -
+          panTouchRef.current.startX
+
+        const deltaY =
+          event.touches[0].clientY -
+          panTouchRef.current.startY
+
+        const nextPan = {
+          x:
+            panTouchRef.current.startPan.x +
+            deltaX,
+          y:
+            panTouchRef.current.startPan.y +
+            deltaY,
+        }
+
+        panRef.current = nextPan
+        setPan(nextPan)
       }
     }
 
     const handleTouchEnd = (event) => {
       if (event.touches.length < 2) {
         pinchRef.current = null
+      }
+
+      if (event.touches.length < 1) {
+        panTouchRef.current = null
       }
     }
 
@@ -3526,6 +3612,131 @@ function App() {
         return lot
       })
     })
+  }
+
+  const closeScanner = () => {
+    if (scannerLoopRef.current) {
+      cancelAnimationFrame(
+        scannerLoopRef.current
+      )
+
+      scannerLoopRef.current = null
+    }
+
+    if (scannerStreamRef.current) {
+      scannerStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop())
+
+      scannerStreamRef.current = null
+    }
+
+    setShowScanner(false)
+    setScannerError(null)
+  }
+
+  const openScanner = async () => {
+    setScannerError(null)
+    setShowScanner(true)
+
+    try {
+      const stream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            video: {
+              facingMode: 'environment',
+            },
+          }
+        )
+
+      scannerStreamRef.current = stream
+
+      if (scannerVideoRef.current) {
+        scannerVideoRef.current.srcObject =
+          stream
+
+        await scannerVideoRef.current.play()
+      }
+
+      const scanFrame = () => {
+        const video = scannerVideoRef.current
+        const canvas = scannerCanvasRef.current
+
+        if (
+          video &&
+          canvas &&
+          video.readyState ===
+            video.HAVE_ENOUGH_DATA
+        ) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+
+          const ctx = canvas.getContext('2d')
+
+          ctx.drawImage(
+            video,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          )
+
+          const imageData = ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          )
+
+          const code = jsQR(
+            imageData.data,
+            imageData.width,
+            imageData.height
+          )
+
+          if (code) {
+            try {
+              const url = new URL(code.data)
+              const carId = url.searchParams.get(
+                'car'
+              )
+
+              if (carId) {
+                const target = vehicles.find(
+                  (vehicle) =>
+                    String(vehicle.id) ===
+                    carId
+                )
+
+                if (target) {
+                  closeScanner()
+                  jumpToVehicle(target)
+                  return
+                }
+              }
+
+              setScannerError(
+                'That QR code isn\u2019t a Car Finder code.'
+              )
+            } catch (err) {
+              setScannerError(
+                'That QR code isn\u2019t a Car Finder code.'
+              )
+            }
+          }
+        }
+
+        scannerLoopRef.current =
+          requestAnimationFrame(scanFrame)
+      }
+
+      scannerLoopRef.current =
+        requestAnimationFrame(scanFrame)
+    } catch (err) {
+      setScannerError(
+        'Could not access the camera. Check that you\u2019ve allowed camera access for this site.'
+      )
+    }
   }
 
   const jumpToVehicle = (vehicle) => {
@@ -5817,6 +6028,50 @@ function App() {
         ☰
       </button>
 
+      <button
+        className="mobile-scan-button"
+        onClick={openScanner}
+        title="Scan a car's QR code"
+      >
+        ⚏
+      </button>
+
+      {showScanner && (
+        <div className="scanner-overlay">
+          <video
+            ref={scannerVideoRef}
+            className="scanner-video"
+            playsInline
+            muted
+          />
+
+          <canvas
+            ref={scannerCanvasRef}
+            style={{ display: 'none' }}
+          />
+
+          <div className="scanner-frame" />
+
+          <button
+            className="scanner-close"
+            onClick={closeScanner}
+          >
+            ×
+          </button>
+
+          {scannerError && (
+            <div className="scanner-error">
+              {scannerError}
+            </div>
+          )}
+
+          <div className="scanner-hint">
+            Point the camera at a car's QR
+            code
+          </div>
+        </div>
+      )}
+
       {showMobileSidebar && (
         <div
           className="mobile-sidebar-backdrop"
@@ -5875,6 +6130,14 @@ function App() {
             placeholder="Search plate or VIN…"
             className="sidebar-search-input"
           />
+
+          <button
+            className="sidebar-scan-button"
+            onClick={openScanner}
+            title="Scan a car's QR code"
+          >
+            ⚏
+          </button>
 
           {searchMatches.length > 0 && (
             <div className="sidebar-search-results">
