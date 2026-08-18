@@ -2324,22 +2324,10 @@ function App() {
       if (event.touches.length === 1) {
         const target = event.target
 
-        const isOnInteractiveItem =
+        const isOnAlwaysInteractive =
           target.closest &&
           (target.closest('.parking-space') ||
             target.closest('.car') ||
-            target.closest('.map-area') ||
-            target.closest('.map-road') ||
-            target.closest('.map-label') ||
-            target.closest(
-              '.custom-object-layer'
-            ) ||
-            target.closest(
-              '.resize-handle'
-            ) ||
-            target.closest(
-              '.label-rotate-handle'
-            ) ||
             target.closest(
               '.zoom-controls'
             ) ||
@@ -2351,7 +2339,26 @@ function App() {
             ) ||
             target.closest('.yard-title'))
 
-        if (isOnInteractiveItem) {
+        const isOnEditOnlyInteractive =
+          showToolsPanel &&
+          target.closest &&
+          (target.closest('.map-area') ||
+            target.closest('.map-road') ||
+            target.closest('.map-label') ||
+            target.closest(
+              '.custom-object-layer'
+            ) ||
+            target.closest(
+              '.resize-handle'
+            ) ||
+            target.closest(
+              '.label-rotate-handle'
+            ))
+
+        if (
+          isOnAlwaysInteractive ||
+          isOnEditOnlyInteractive
+        ) {
           return
         }
 
@@ -2479,7 +2486,7 @@ function App() {
         handleTouchEnd
       )
     }
-  }, [session, membership])
+  }, [session, membership, showToolsPanel])
 
   const getMousePosition = (event) => {
     const rect =
