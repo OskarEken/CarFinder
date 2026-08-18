@@ -6246,17 +6246,20 @@ function App() {
           )}
 
           <div className="sidebar-footer">
-            <button
-              className={
-                'footer-button edit-toggle' +
-                (showToolsPanel
-                  ? ' active'
-                  : '')
-              }
-              onClick={toggleEditMode}
-            >
-              ✎ Edit
-            </button>
+            {membership &&
+              membership.role === 'admin' && (
+                <button
+                  className={
+                    'footer-button edit-toggle' +
+                    (showToolsPanel
+                      ? ' active'
+                      : '')
+                  }
+                  onClick={toggleEditMode}
+                >
+                  ✎ Edit
+                </button>
+              )}
 
             <div className="settings-button-wrap">
               <button
