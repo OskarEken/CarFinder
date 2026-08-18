@@ -1301,6 +1301,7 @@ function App() {
   const [orgLoading, setOrgLoading] = useState(true)
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const [mapDataLoaded, setMapDataLoaded] = useState(false)
 
   useEffect(() => {
@@ -5807,8 +5808,42 @@ function App() {
         </div>
       )}
 
-      <aside className="sidebar">
+      <button
+        className="mobile-menu-button"
+        onClick={() =>
+          setShowMobileSidebar(true)
+        }
+      >
+        ☰
+      </button>
+
+      {showMobileSidebar && (
+        <div
+          className="mobile-sidebar-backdrop"
+          onClick={() =>
+            setShowMobileSidebar(false)
+          }
+        />
+      )}
+
+      <aside
+        className={
+          'sidebar' +
+          (showMobileSidebar
+            ? ' mobile-open'
+            : '')
+        }
+      >
         <div className="brand">
+          <button
+            className="mobile-sidebar-close"
+            onClick={() =>
+              setShowMobileSidebar(false)
+            }
+          >
+            ×
+          </button>
+
           <div className="brand-logo">
             Car Finder
           </div>

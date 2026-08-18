@@ -88,8 +88,13 @@ button {
 }
 
 .brand {
+  position: relative;
   padding: 28px 24px 30px;
   border-bottom: 1px solid #252e38;
+}
+
+.mobile-sidebar-close {
+  display: none;
 }
 
 .brand-logo {
@@ -2398,4 +2403,103 @@ button {
 .vehicle-actions .delete-button:hover {
   background: #b83e3e;
   border-color: #b83e3e;
+}
+
+/* MOBILE RESPONSIVE */
+
+.mobile-menu-button {
+  display: none;
+}
+
+.mobile-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-button {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid #d8dee3;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #1c252e;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(10, 15, 20, 0.45);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    width: 82vw;
+    max-width: 320px;
+    min-width: 0;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 18px;
+    right: 16px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 7px;
+    background: #1b2530;
+    color: #ffffff;
+    font-size: 18px;
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .lot-tabs {
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 76px);
+    overflow-x: auto;
+  }
+
+  .zoom-controls {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .status-legend {
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .inspector,
+  .add-car-popover,
+  .settings-modal {
+    width: 92vw;
+    max-width: 420px;
+  }
 }
