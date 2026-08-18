@@ -6040,7 +6040,7 @@ function App() {
         onClick={openScanner}
         title="Scan a car's QR code"
       >
-        ⚏
+        📷
       </button>
 
       {showScanner && (
@@ -6143,7 +6143,7 @@ function App() {
             onClick={openScanner}
             title="Scan a car's QR code"
           >
-            ⚏
+            📷
           </button>
 
           {searchMatches.length > 0 && (

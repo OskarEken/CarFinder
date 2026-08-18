@@ -2480,10 +2480,22 @@ button {
   }
 
   .lot-tabs {
+    top: 66px;
     left: 50%;
     transform: translateX(-50%);
-    max-width: calc(100vw - 76px);
+    max-width: calc(100vw - 24px);
     overflow-x: auto;
+  }
+
+  .canvas-status {
+    top: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .history-controls {
+    top: 66px;
+    right: 12px;
   }
 
   .zoom-controls {
