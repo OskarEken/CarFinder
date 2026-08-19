@@ -1115,7 +1115,7 @@ button {
 
 .map-area {
   position: absolute;
-  z-index: 2;
+  z-index: 0;
   border: 2px solid #20252a;
   border-radius: 6px;
   background: rgba(91, 108, 124, 0.14);
@@ -1135,7 +1135,7 @@ button {
 
 .map-area-seam {
   position: absolute;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
 }
 
