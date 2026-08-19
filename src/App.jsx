@@ -7701,12 +7701,22 @@ function App() {
                                       )
                                     }}
                                   >
-                                    {vehicle.vin
-                                      ? vehicle.vin.slice(
-                                          -6
-                                        )
-                                      : vehicle.registration ||
-                                        '—'}
+                                    <div className="multi-lot-dot-vin">
+                                      {vehicle.vin
+                                        ? vehicle.vin.slice(
+                                            -6
+                                          )
+                                        : vehicle.registration ||
+                                          '—'}
+                                    </div>
+
+                                    {vehicle.make && (
+                                      <div className="multi-lot-dot-make">
+                                        {
+                                          vehicle.make
+                                        }
+                                      </div>
+                                    )}
                                   </div>
                                 )
                               )}
