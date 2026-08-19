@@ -1317,6 +1317,8 @@ function App() {
   const [qrMoveVehicle, setQrMoveVehicle] = useState(null)
   const [pickingSpaceForVehicle, setPickingSpaceForVehicle] = useState(null)
   const [pendingMoveTarget, setPendingMoveTarget] = useState(null)
+  const [showMoveStatusPicker, setShowMoveStatusPicker] = useState(false)
+  const [pendingMoveStatus, setPendingMoveStatus] = useState('')
   const [scannerError, setScannerError] = useState(null)
   const [mapDataLoaded, setMapDataLoaded] = useState(false)
 
@@ -3965,16 +3967,23 @@ function App() {
               spaceId:
                 pendingMoveTarget.spaceId,
               multiLotId: null,
+              status: pendingMoveStatus
+                ? pendingMoveStatus
+                : vehicle.status,
             }
           : vehicle
       )
     )
 
     setPendingMoveTarget(null)
+    setShowMoveStatusPicker(false)
+    setPendingMoveStatus('')
   }
 
   const cancelMoveTarget = () => {
     setPendingMoveTarget(null)
+    setShowMoveStatusPicker(false)
+    setPendingMoveStatus('')
   }
 
   const handleScannedVehicle = (vehicle) => {
@@ -6551,13 +6560,52 @@ function App() {
       )}
 
       {pendingMoveTarget && (
-        <div className="move-car-prompt">
+        <div className="move-confirm-prompt">
           <span className="move-car-prompt-text">
             Move car to{' '}
             {pendingMoveTarget.spaceLabel ||
               'this space'}
             ?
           </span>
+
+          {showMoveStatusPicker ? (
+            <select
+              className="move-confirm-status-select"
+              value={pendingMoveStatus}
+              onChange={(event) =>
+                setPendingMoveStatus(
+                  event.target.value
+                )
+              }
+            >
+              <option value="">
+                Keep current status
+              </option>
+
+              {STATUS_LEGEND.filter(
+                (item) =>
+                  item.value !== 'none'
+              ).map((item) => (
+                <option
+                  key={item.value}
+                  value={item.value}
+                >
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button
+              className="move-confirm-status-toggle"
+              onClick={() =>
+                setShowMoveStatusPicker(
+                  true
+                )
+              }
+            >
+              Change status (optional)
+            </button>
+          )}
 
           <div className="move-car-prompt-actions">
             <button

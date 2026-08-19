@@ -2764,6 +2764,57 @@ button {
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
 }
 
+.move-confirm-prompt {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 260px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.move-confirm-prompt .move-car-prompt-text {
+  text-align: center;
+  white-space: normal;
+}
+
+.move-confirm-prompt .move-car-prompt-actions {
+  justify-content: center;
+}
+
+.move-confirm-status-toggle {
+  padding: 8px 10px;
+  border: 1px dashed #c7ced3;
+  border-radius: 8px;
+  background: transparent;
+  color: #687580;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.move-confirm-status-toggle:hover {
+  background: #f5f7f8;
+}
+
+.move-confirm-status-select {
+  padding: 8px 10px;
+  border: 1px solid #dfe4e8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1c252e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .move-car-prompt-text {
   font-size: 14px;
   font-weight: 700;
