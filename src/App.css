@@ -2468,7 +2468,7 @@ button {
   }
 
   .lot-tabs {
-    top: 66px;
+    top: 14px;
     left: 50%;
     transform: translateX(-50%);
     max-width: calc(100vw - 24px);
@@ -2476,13 +2476,13 @@ button {
   }
 
   .canvas-status {
-    top: 112px;
+    top: 64px;
     left: 50%;
     transform: translateX(-50%);
   }
 
   .history-controls {
-    top: 66px;
+    top: 14px;
     right: 12px;
   }
 
