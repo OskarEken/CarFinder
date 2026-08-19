@@ -1379,50 +1379,38 @@ button {
 }
 
 .parking-space.search-highlight {
+  z-index: 15;
   border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
-  animation: search-pulse-in 0.6s ease-out;
+  animation: search-glow-pulse 1.3s ease-in-out infinite;
 }
 
-@keyframes search-pulse-in {
-  0% {
-    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.55);
-  }
+@keyframes search-glow-pulse {
+  0%,
   100% {
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+    box-shadow:
+      0 0 0 3px rgba(139, 92, 246, 0.4),
+      0 0 16px 4px rgba(139, 92, 246, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(139, 92, 246, 0.15),
+      0 0 30px 12px rgba(139, 92, 246, 0.75);
   }
 }
 
 .parking-space.search-highlight > .car {
-  animation: car-vibrate 1.6s ease-in-out infinite;
+  animation: car-zoom-pulse 1.3s ease-in-out infinite;
 }
 
-@keyframes car-vibrate {
+@keyframes car-zoom-pulse {
   0%,
-  76%,
   100% {
     transform: translate(-50%, -50%)
-      rotate(0deg);
+      scale(1);
   }
-  79% {
+  50% {
     transform: translate(-50%, -50%)
-      rotate(-6deg);
-  }
-  82% {
-    transform: translate(-50%, -50%)
-      rotate(6deg);
-  }
-  85% {
-    transform: translate(-50%, -50%)
-      rotate(-6deg);
-  }
-  88% {
-    transform: translate(-50%, -50%)
-      rotate(6deg);
-  }
-  91% {
-    transform: translate(-50%, -50%)
-      rotate(0deg);
+      scale(1.18);
   }
 }
 
