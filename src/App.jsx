@@ -7700,7 +7700,14 @@ function App() {
                                         vehicle
                                       )
                                     }}
-                                  />
+                                  >
+                                    {vehicle.vin
+                                      ? vehicle.vin.slice(
+                                          -6
+                                        )
+                                      : vehicle.registration ||
+                                        '—'}
+                                  </div>
                                 )
                               )}
                           </div>
