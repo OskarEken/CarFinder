@@ -2780,6 +2780,7 @@ function App() {
     setSelectedRoad(null)
     setSelectedLabel(null)
     setSelectedCustomObject(null)
+    setSelectedMultiLot(null)
     setShowAddCar(false)
     setIsRenamingSpace(false)
     setHighlightSpaceId(null)
@@ -5461,14 +5462,6 @@ function App() {
     multiLot
   ) => {
     if (!showToolsPanel) {
-      setSelectedMultiLot(multiLot.id)
-      setSelectedSpace(null)
-      setSelectedArea(null)
-      setSelectedRoad(null)
-      setSelectedLabel(null)
-      setSelectedVehicle(null)
-      setSelectedSpaces([])
-      setShowAddCar(false)
       return
     }
 
