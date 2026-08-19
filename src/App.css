@@ -2758,3 +2758,96 @@ button {
 .multi-lot-manage-button:hover {
   background: #f5f7f8;
 }
+
+/* QR MOVE CAR PROMPT */
+
+.move-car-prompt {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.move-car-prompt-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1c252e;
+  white-space: nowrap;
+}
+
+.move-car-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.move-car-no,
+.move-car-yes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.move-car-no {
+  background: #c94b4b;
+}
+
+.move-car-no:hover {
+  background: #b83e3e;
+}
+
+.move-car-yes {
+  background: #22c55e;
+}
+
+.move-car-yes:hover {
+  background: #1ca34e;
+}
+
+.choose-space-banner {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #1c252e;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+}
+
+.choose-space-banner button {
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 7px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choose-space-banner button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}

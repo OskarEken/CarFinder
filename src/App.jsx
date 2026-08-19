@@ -1314,6 +1314,8 @@ function App() {
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
+  const [qrMoveVehicle, setQrMoveVehicle] = useState(null)
+  const [pickingSpaceForVehicle, setPickingSpaceForVehicle] = useState(null)
   const [scannerError, setScannerError] = useState(null)
   const [mapDataLoaded, setMapDataLoaded] = useState(false)
 
@@ -3849,7 +3851,9 @@ function App() {
 
                 if (target) {
                   closeScanner()
-                  jumpToVehicle(target)
+                  handleScannedVehicle(
+                    target
+                  )
                   return
                 }
               }
@@ -3946,10 +3950,97 @@ function App() {
     setHighlightSpaceId(space.id)
   }
 
+  const handleScannedVehicle = (vehicle) => {
+    setSearchQuery('')
+    setShowAddCar(false)
+    setSelectedSpace(null)
+    setSelectedArea(null)
+    setSelectedSpaces([])
+    setIsSearchFocused(false)
+    setHighlightSpaceId(
+      vehicle.spaceId || null
+    )
+
+    setRecentSearches((current) => {
+      const withoutThis = current.filter(
+        (id) => id !== vehicle.id
+      )
+
+      return [
+        vehicle.id,
+        ...withoutThis,
+      ].slice(0, 5)
+    })
+
+    if (vehicle.spaceId) {
+      const space = spaces.find(
+        (item) =>
+          item.id === vehicle.spaceId
+      )
+
+      const canvasEl = canvasRef.current
+
+      if (space && canvasEl) {
+        if (
+          space.lotId &&
+          space.lotId !== activeLotId
+        ) {
+          setActiveLotId(space.lotId)
+        }
+
+        const rect =
+          canvasEl.getBoundingClientRect()
+
+        const centerX =
+          space.x + SPACE_WIDTH / 2
+
+        const centerY =
+          space.y + SPACE_HEIGHT / 2
+
+        const currentZoom = zoomRef.current
+
+        const newPan = {
+          x:
+            rect.width / 2 -
+            centerX * currentZoom,
+          y:
+            rect.height / 2 -
+            centerY * currentZoom,
+        }
+
+        panRef.current = newPan
+        setPan(newPan)
+      }
+    }
+
+    setQrMoveVehicle(vehicle)
+  }
+
   const startSpaceDrag = (
     event,
     space
   ) => {
+    if (pickingSpaceForVehicle) {
+      event.stopPropagation()
+
+      setVehicles((current) =>
+        current.map((vehicle) =>
+          vehicle.id ===
+          pickingSpaceForVehicle
+            ? {
+                ...vehicle,
+                spaceId: space.id,
+                multiLotId: null,
+              }
+            : vehicle
+        )
+      )
+
+      setPickingSpaceForVehicle(null)
+      setHighlightSpaceId(space.id)
+      return
+    }
+
     if (!showToolsPanel) {
       return
     }
@@ -6388,6 +6479,54 @@ function App() {
             Point the camera at a car's QR
             code
           </div>
+        </div>
+      )}
+
+      {qrMoveVehicle && (
+        <div className="move-car-prompt">
+          <span className="move-car-prompt-text">
+            Move this car?
+          </span>
+
+          <div className="move-car-prompt-actions">
+            <button
+              className="move-car-no"
+              onClick={() =>
+                setQrMoveVehicle(null)
+              }
+            >
+              ✕
+            </button>
+
+            <button
+              className="move-car-yes"
+              onClick={() => {
+                setPickingSpaceForVehicle(
+                  qrMoveVehicle.id
+                )
+
+                setQrMoveVehicle(null)
+              }}
+            >
+              ✓
+            </button>
+          </div>
+        </div>
+      )}
+
+      {pickingSpaceForVehicle && (
+        <div className="choose-space-banner">
+          Choose new parking space
+
+          <button
+            onClick={() =>
+              setPickingSpaceForVehicle(
+                null
+              )
+            }
+          >
+            Cancel
+          </button>
         </div>
       )}
 
