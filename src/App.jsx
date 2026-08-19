@@ -1316,6 +1316,7 @@ function App() {
   const [showScanner, setShowScanner] = useState(false)
   const [qrMoveVehicle, setQrMoveVehicle] = useState(null)
   const [pickingSpaceForVehicle, setPickingSpaceForVehicle] = useState(null)
+  const [pendingMoveTarget, setPendingMoveTarget] = useState(null)
   const [scannerError, setScannerError] = useState(null)
   const [mapDataLoaded, setMapDataLoaded] = useState(false)
 
@@ -3950,6 +3951,32 @@ function App() {
     setHighlightSpaceId(space.id)
   }
 
+  const confirmMoveTarget = () => {
+    if (!pendingMoveTarget) {
+      return
+    }
+
+    setVehicles((current) =>
+      current.map((vehicle) =>
+        vehicle.id ===
+        pendingMoveTarget.vehicleId
+          ? {
+              ...vehicle,
+              spaceId:
+                pendingMoveTarget.spaceId,
+              multiLotId: null,
+            }
+          : vehicle
+      )
+    )
+
+    setPendingMoveTarget(null)
+  }
+
+  const cancelMoveTarget = () => {
+    setPendingMoveTarget(null)
+  }
+
   const handleScannedVehicle = (vehicle) => {
     setSearchQuery('')
     setShowAddCar(false)
@@ -4023,18 +4050,11 @@ function App() {
     if (pickingSpaceForVehicle) {
       event.stopPropagation()
 
-      setVehicles((current) =>
-        current.map((vehicle) =>
-          vehicle.id ===
-          pickingSpaceForVehicle
-            ? {
-                ...vehicle,
-                spaceId: space.id,
-                multiLotId: null,
-              }
-            : vehicle
-        )
-      )
+      setPendingMoveTarget({
+        vehicleId: pickingSpaceForVehicle,
+        spaceId: space.id,
+        spaceLabel: space.label,
+      })
 
       setPickingSpaceForVehicle(null)
       setHighlightSpaceId(space.id)
@@ -6527,6 +6547,33 @@ function App() {
           >
             Cancel
           </button>
+        </div>
+      )}
+
+      {pendingMoveTarget && (
+        <div className="move-car-prompt">
+          <span className="move-car-prompt-text">
+            Move car to{' '}
+            {pendingMoveTarget.spaceLabel ||
+              'this space'}
+            ?
+          </span>
+
+          <div className="move-car-prompt-actions">
+            <button
+              className="move-car-no"
+              onClick={cancelMoveTarget}
+            >
+              ✕
+            </button>
+
+            <button
+              className="move-car-yes"
+              onClick={confirmMoveTarget}
+            >
+              ✓
+            </button>
+          </div>
         </div>
       )}
 
