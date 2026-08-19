@@ -1234,6 +1234,7 @@ function App() {
   const [customObjects, setCustomObjects] = useState([])
   const [multiLots, setMultiLots] = useState([])
   const [selectedMultiLot, setSelectedMultiLot] = useState(null)
+  const [openMultiLotId, setOpenMultiLotId] = useState(null)
   const [selectedCustomObject, setSelectedCustomObject] = useState(null)
   const [drawingCustomObject, setDrawingCustomObject] = useState(null)
   const [customObjectPreviewPos, setCustomObjectPreviewPos] = useState(null)
@@ -2422,6 +2423,9 @@ function App() {
           (target.closest('.parking-space') ||
             target.closest('.car') ||
             target.closest(
+              '.multi-lot-wrap'
+            ) ||
+            target.closest(
               '.zoom-controls'
             ) ||
             target.closest(
@@ -2784,6 +2788,14 @@ function App() {
   const handleCanvasMouseDown = (event) => {
     if (event.button !== 0) {
       return
+    }
+
+    if (
+      !event.target.closest(
+        '.multi-lot-wrap'
+      )
+    ) {
+      setOpenMultiLotId(null)
     }
 
     if (
@@ -4874,23 +4886,15 @@ function App() {
               activeLotId
           )
           .forEach((item) => {
-            const count = vehicles.filter(
-              (vehicle) =>
-                vehicle.multiLotId ===
-                item.id
-            ).length
-
-            const size = getMultiLotSize(
-              count
-            )
-
             if (
               mouseX >= item.x &&
               mouseX <=
-                item.x + size.width &&
+                item.x +
+                  MULTI_LOT_WIDTH &&
               mouseY >= item.y &&
               mouseY <=
-                item.y + size.height
+                item.y +
+                  MULTI_LOT_HEIGHT
             ) {
               hitMultiLot = item
             }
@@ -6212,16 +6216,8 @@ function App() {
       (item.lotId || 1) === activeLotId
   )
 
-  const getMultiLotSize = (count) => {
-    const capacity = Math.max(count, 1)
-    const columns = Math.min(capacity, 3)
-    const rows = Math.ceil(capacity / 3)
-
-    return {
-      width: SPACE_WIDTH * columns,
-      height: SPACE_HEIGHT * rows,
-    }
-  }
+  const MULTI_LOT_WIDTH = 140
+  const MULTI_LOT_HEIGHT = 60
 
   const visibleCustomObjects =
     customObjects.filter(
@@ -6806,7 +6802,7 @@ function App() {
                 }
               >
                 <span className="tool-icon">
-                  🚗
+                  ▭
                 </span>
 
                 Multiple Lot
@@ -7595,10 +7591,6 @@ function App() {
                     item.id
                 ).length
 
-                const size = getMultiLotSize(
-                  count
-                )
-
                 const isSelected =
                   selectedMultiLot === item.id
 
@@ -7606,45 +7598,130 @@ function App() {
                   snapMultiLotTarget ===
                   item.id
 
+                const isOpen =
+                  openMultiLotId === item.id
+
                 return (
                   <div
                     key={item.id}
-                    className={
-                      'multi-lot' +
-                      (isSelected
-                        ? ' selected'
-                        : '') +
-                      (isSnapTarget
-                        ? ' snap-target'
-                        : '')
-                    }
+                    className="multi-lot-wrap"
                     style={{
                       left: item.x,
                       top: item.y,
-                      width: size.width,
-                      height: size.height,
-                      cursor: showToolsPanel
-                        ? 'grab'
-                        : 'pointer',
                     }}
-                    onMouseDown={(event) =>
-                      startMultiLotDrag(
-                        event,
-                        item
-                      )
-                    }
                   >
-                    <div className="multi-lot-icon">
-                      🚗
+                    <div
+                      className={
+                        'multi-lot' +
+                        (isSelected
+                          ? ' selected'
+                          : '') +
+                        (isSnapTarget
+                          ? ' snap-target'
+                          : '')
+                      }
+                      style={{
+                        cursor: showToolsPanel
+                          ? 'grab'
+                          : 'pointer',
+                      }}
+                      onMouseDown={(event) =>
+                        startMultiLotDrag(
+                          event,
+                          item
+                        )
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation()
+
+                        setOpenMultiLotId(
+                          isOpen
+                            ? null
+                            : item.id
+                        )
+                      }}
+                    >
+                      <div className="multi-lot-label">
+                        {item.label}
+                      </div>
+
+                      <div className="multi-lot-count">
+                        {count}
+                      </div>
                     </div>
 
-                    <div className="multi-lot-count">
-                      {count}
-                    </div>
+                    {isOpen && (
+                      <div
+                        className="multi-lot-popup"
+                        onMouseDown={(
+                          event
+                        ) =>
+                          event.stopPropagation()
+                        }
+                      >
+                        <div className="multi-lot-popup-header">
+                          {item.label} ·{' '}
+                          {count}{' '}
+                          {count === 1
+                            ? 'car'
+                            : 'cars'}
+                        </div>
 
-                    <div className="multi-lot-label">
-                      {item.label}
-                    </div>
+                        {count === 0 ? (
+                          <div className="field-hint">
+                            No cars here yet.
+                          </div>
+                        ) : (
+                          <div className="multi-lot-dots">
+                            {vehicles
+                              .filter(
+                                (vehicle) =>
+                                  vehicle.multiLotId ===
+                                  item.id
+                              )
+                              .map(
+                                (vehicle) => (
+                                  <div
+                                    key={
+                                      vehicle.id
+                                    }
+                                    className="multi-lot-dot"
+                                    title={
+                                      vehicle.registration ||
+                                      vehicle.vin ||
+                                      'Unnamed car'
+                                    }
+                                    onClick={() => {
+                                      setOpenMultiLotId(
+                                        null
+                                      )
+
+                                      jumpToVehicle(
+                                        vehicle
+                                      )
+                                    }}
+                                  />
+                                )
+                              )}
+                          </div>
+                        )}
+
+                        <button
+                          className="multi-lot-manage-button"
+                          onClick={() => {
+                            setOpenMultiLotId(
+                              null
+                            )
+
+                            setSelectedMultiLot(
+                              item.id
+                            )
+                          }}
+                        >
+                          Manage zone
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
