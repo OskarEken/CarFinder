@@ -186,6 +186,14 @@ const OBJECT_COLORS = [
   '#be185d',
 ]
 
+const LABEL_COLORS = [
+  '#ffffff',
+  '#eab308',
+  '#dc2626',
+  '#22c55e',
+  '#000000',
+]
+
 const STATUS_LEGEND = [
   { value: 'none', label: '\u2013 (not set)', color: '#9aa4ac' },
   { value: 'reserved', label: 'Reserved', color: '#eab308' },
@@ -2929,7 +2937,7 @@ function App() {
         width: 84,
         height: 32,
         text: 'Label',
-        color: OBJECT_COLORS[0],
+        color: LABEL_COLORS[0],
         lotId: activeLotId,
       }
 
@@ -7737,7 +7745,7 @@ function App() {
 
                 const labelColor =
                   label.color ||
-                  OBJECT_COLORS[0]
+                  LABEL_COLORS[0]
 
                 return (
                   <div
@@ -9222,7 +9230,7 @@ function App() {
                     </label>
 
                     <div className="color-swatches">
-                      {OBJECT_COLORS.map(
+                      {LABEL_COLORS.map(
                         (color) => (
                           <button
                             key={color}
