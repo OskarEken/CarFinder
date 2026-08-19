@@ -2629,3 +2629,47 @@ button {
     display: flex;
   }
 }
+
+/* MULTIPLE LOT */
+
+.multi-lot {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px dashed #3d6f9d;
+  border-radius: 10px;
+  background: rgba(61, 111, 157, 0.12);
+}
+
+.multi-lot.selected {
+  border-color: #1c4f7c;
+  background: rgba(61, 111, 157, 0.2);
+}
+
+.multi-lot.snap-target {
+  border-color: #3d9b69;
+  background: rgba(61, 155, 105, 0.22);
+}
+
+.multi-lot-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.multi-lot-count {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1c4f7c;
+}
+
+.multi-lot-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #4a5a68;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}

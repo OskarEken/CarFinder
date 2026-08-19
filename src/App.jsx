@@ -1195,6 +1195,7 @@ function App() {
     roads: 0,
     labels: 0,
     customObjects: 0,
+    multiLots: 0,
   })
   const justFinishedSelecting = useRef(false)
   const justFinishedDraggingSpace = useRef(false)
@@ -1229,7 +1230,10 @@ function App() {
   const [labels, setLabels] = useState([])
   const [selectedLabel, setSelectedLabel] = useState(null)
   const [draggingLabel, setDraggingLabel] = useState(null)
+  const [draggingMultiLot, setDraggingMultiLot] = useState(null)
   const [customObjects, setCustomObjects] = useState([])
+  const [multiLots, setMultiLots] = useState([])
+  const [selectedMultiLot, setSelectedMultiLot] = useState(null)
   const [selectedCustomObject, setSelectedCustomObject] = useState(null)
   const [drawingCustomObject, setDrawingCustomObject] = useState(null)
   const [customObjectPreviewPos, setCustomObjectPreviewPos] = useState(null)
@@ -1329,6 +1333,7 @@ function App() {
         roadsRes,
         labelsRes,
         customRes,
+        multiLotsRes,
       ] = await Promise.all([
         supabase
           .from('lots')
@@ -1356,6 +1361,10 @@ function App() {
           .eq('org_id', organization.id),
         supabase
           .from('map_custom_objects')
+          .select('*')
+          .eq('org_id', organization.id),
+        supabase
+          .from('multi_lots')
           .select('*')
           .eq('org_id', organization.id),
       ])
@@ -1415,6 +1424,7 @@ function App() {
             make: vehicle.make,
             status: vehicle.status,
             spaceId: vehicle.space_id,
+            multiLotId: vehicle.multi_lot_id,
           })
         )
       )
@@ -1473,6 +1483,18 @@ function App() {
             color: obj.color,
             points: obj.points,
             lotId: obj.lot_id,
+          })
+        )
+      )
+
+      setMultiLots(
+        (multiLotsRes.data || []).map(
+          (item) => ({
+            id: item.id,
+            x: item.x,
+            y: item.y,
+            label: item.label,
+            lotId: item.lot_id,
           })
         )
       )
@@ -1622,6 +1644,8 @@ function App() {
               make: vehicle.make,
               status: vehicle.status,
               space_id: vehicle.spaceId,
+              multi_lot_id:
+                vehicle.multiLotId,
             }))
           )
       }
@@ -1770,6 +1794,43 @@ function App() {
     return () => clearTimeout(timeout)
   }, [
     customObjects,
+    organization,
+    mapDataLoaded,
+  ])
+
+  useEffect(() => {
+    if (!organization || !mapDataLoaded) {
+      return
+    }
+
+    const timeout = setTimeout(async () => {
+      lastLocalSaveRef.current.multiLots =
+        Date.now()
+
+      await supabase
+        .from('multi_lots')
+        .delete()
+        .eq('org_id', organization.id)
+
+      if (multiLots.length > 0) {
+        await supabase
+          .from('multi_lots')
+          .insert(
+            multiLots.map((item) => ({
+              id: item.id,
+              org_id: organization.id,
+              lot_id: item.lotId,
+              x: item.x,
+              y: item.y,
+              label: item.label,
+            }))
+          )
+      }
+    }, 800)
+
+    return () => clearTimeout(timeout)
+  }, [
+    multiLots,
     organization,
     mapDataLoaded,
   ])
@@ -1950,6 +2011,27 @@ function App() {
       )
     }
 
+    const reloadMultiLots = async () => {
+      if (wasRecentLocalSave('multiLots')) {
+        return
+      }
+
+      const { data } = await supabase
+        .from('multi_lots')
+        .select('*')
+        .eq('org_id', organization.id)
+
+      setMultiLots(
+        (data || []).map((item) => ({
+          id: item.id,
+          x: item.x,
+          y: item.y,
+          label: item.label,
+          lotId: item.lot_id,
+        }))
+      )
+    }
+
     const filter = `org_id=eq.${organization.id}`
 
     const channel = supabase
@@ -2023,6 +2105,16 @@ function App() {
           filter,
         },
         reloadCustomObjects
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'multi_lots',
+          filter,
+        },
+        reloadMultiLots
       )
       .subscribe()
 
@@ -2132,6 +2224,7 @@ function App() {
 
   const [previewPosition, setPreviewPosition] = useState(null)
   const [snapTarget, setSnapTarget] = useState(null)
+  const [snapMultiLotTarget, setSnapMultiLotTarget] = useState(null)
   const [isOverUnassignedZone, setIsOverUnassignedZone] = useState(false)
 
   const [zoom, setZoom] = useState(0.4)
@@ -2828,6 +2921,32 @@ function App() {
       ])
 
       setSelectedLabel(newLabel.id)
+      setActiveTool('select')
+
+      return
+    }
+
+    if (activeTool === 'multiLot') {
+      pushHistory()
+
+      const newMultiLot = {
+        id: Date.now(),
+        x: snapToGrid(
+          position.x - SPACE_WIDTH / 2
+        ),
+        y: snapToGrid(
+          position.y - SPACE_HEIGHT / 2
+        ),
+        label: 'Zone',
+        lotId: activeLotId,
+      }
+
+      setMultiLots((current) => [
+        ...current,
+        newMultiLot,
+      ])
+
+      setSelectedMultiLot(newMultiLot.id)
       setActiveTool('select')
 
       return
@@ -4533,6 +4652,36 @@ function App() {
       return
     }
 
+    if (draggingMultiLot) {
+      const newX = snapToGrid(
+        position.x -
+          draggingMultiLot.offsetX
+      )
+
+      const newY = snapToGrid(
+        position.y -
+          draggingMultiLot.offsetY
+      )
+
+      setMultiLots((current) => {
+        return current.map((item) => {
+          if (
+            item.id === draggingMultiLot.id
+          ) {
+            return {
+              ...item,
+              x: newX,
+              y: newY,
+            }
+          }
+
+          return item
+        })
+      })
+
+      return
+    }
+
     if (draggingSpace) {
       spaceDragMovedRef.current = true
 
@@ -4704,6 +4853,8 @@ function App() {
           closestSpace.id
         )
 
+        setSnapMultiLotTarget(null)
+
         setPreviewPosition({
           x:
             closestSpace.x +
@@ -4714,12 +4865,56 @@ function App() {
             SPACE_HEIGHT / 2,
         })
       } else {
-        setSnapTarget(null)
+        let hitMultiLot = null
 
-        setPreviewPosition({
-          x: mouseX,
-          y: mouseY,
-        })
+        multiLots
+          .filter(
+            (item) =>
+              (item.lotId || 1) ===
+              activeLotId
+          )
+          .forEach((item) => {
+            const count = vehicles.filter(
+              (vehicle) =>
+                vehicle.multiLotId ===
+                item.id
+            ).length
+
+            const size = getMultiLotSize(
+              count
+            )
+
+            if (
+              mouseX >= item.x &&
+              mouseX <=
+                item.x + size.width &&
+              mouseY >= item.y &&
+              mouseY <=
+                item.y + size.height
+            ) {
+              hitMultiLot = item
+            }
+          })
+
+        if (hitMultiLot) {
+          setSnapTarget(null)
+          setSnapMultiLotTarget(
+            hitMultiLot.id
+          )
+
+          setPreviewPosition({
+            x: mouseX,
+            y: mouseY,
+          })
+        } else {
+          setSnapTarget(null)
+          setSnapMultiLotTarget(null)
+
+          setPreviewPosition({
+            x: mouseX,
+            y: mouseY,
+          })
+        }
       }
     }
   }
@@ -4767,6 +4962,7 @@ function App() {
               return {
                 ...vehicle,
                 spaceId: null,
+                multiLotId: null,
               }
             }
 
@@ -4783,6 +4979,25 @@ function App() {
               return {
                 ...vehicle,
                 spaceId: snapTarget,
+                multiLotId: null,
+              }
+            }
+
+            return vehicle
+          })
+        })
+      } else if (snapMultiLotTarget) {
+        setVehicles((current) => {
+          return current.map((vehicle) => {
+            if (
+              vehicle.id ===
+              draggingVehicle.id
+            ) {
+              return {
+                ...vehicle,
+                spaceId: null,
+                multiLotId:
+                  snapMultiLotTarget,
               }
             }
 
@@ -4805,12 +5020,14 @@ function App() {
     setDraggingRoad(null)
     setResizingRoad(null)
     setDraggingLabel(null)
+    setDraggingMultiLot(null)
     setResizingLabel(null)
     setRotatingLabel(null)
     setDraggingCustomObject(null)
     setDraggingVertex(null)
     setPreviewPosition(null)
     setSnapTarget(null)
+    setSnapMultiLotTarget(null)
     setIsOverUnassignedZone(false)
 
     if (draggedRoadId) {
@@ -5235,6 +5452,44 @@ function App() {
     setShowAddCar(false)
   }
 
+  const startMultiLotDrag = (
+    event,
+    multiLot
+  ) => {
+    if (!showToolsPanel) {
+      setSelectedMultiLot(multiLot.id)
+      setSelectedSpace(null)
+      setSelectedArea(null)
+      setSelectedRoad(null)
+      setSelectedLabel(null)
+      setSelectedVehicle(null)
+      setSelectedSpaces([])
+      setShowAddCar(false)
+      return
+    }
+
+    event.stopPropagation()
+
+    pushHistory()
+
+    const position = getMousePosition(event)
+
+    setDraggingMultiLot({
+      id: multiLot.id,
+      offsetX: position.x - multiLot.x,
+      offsetY: position.y - multiLot.y,
+    })
+
+    setSelectedMultiLot(multiLot.id)
+    setSelectedSpace(null)
+    setSelectedArea(null)
+    setSelectedRoad(null)
+    setSelectedLabel(null)
+    setSelectedVehicle(null)
+    setSelectedSpaces([])
+    setShowAddCar(false)
+  }
+
   const updateLabelText = (event) => {
     const newText = event.target.value
 
@@ -5279,6 +5534,52 @@ function App() {
     )
 
     setSelectedLabel(null)
+  }
+
+  const updateMultiLotName = (event) => {
+    const newName = event.target.value
+
+    setMultiLots((current) => {
+      return current.map((item) => {
+        if (item.id === selectedMultiLot) {
+          return {
+            ...item,
+            label: newName,
+          }
+        }
+
+        return item
+      })
+    })
+  }
+
+  const deleteMultiLot = () => {
+    pushHistory()
+
+    setVehicles((current) =>
+      current.map((vehicle) => {
+        if (
+          vehicle.multiLotId ===
+          selectedMultiLot
+        ) {
+          return {
+            ...vehicle,
+            multiLotId: null,
+          }
+        }
+
+        return vehicle
+      })
+    )
+
+    setMultiLots((current) =>
+      current.filter(
+        (item) =>
+          item.id !== selectedMultiLot
+      )
+    )
+
+    setSelectedMultiLot(null)
   }
 
   const startLabelRotate = (event, label) => {
@@ -5874,6 +6175,12 @@ function App() {
         label.id === selectedLabel
     )
 
+  const selectedMultiLotData =
+    multiLots.find(
+      (item) =>
+        item.id === selectedMultiLot
+    )
+
   const selectedCustomObjectData =
     customObjects.find(
       (obj) =>
@@ -5899,6 +6206,22 @@ function App() {
     (label) =>
       (label.lotId || 1) === activeLotId
   )
+
+  const visibleMultiLots = multiLots.filter(
+    (item) =>
+      (item.lotId || 1) === activeLotId
+  )
+
+  const getMultiLotSize = (count) => {
+    const capacity = Math.max(count, 1)
+    const columns = Math.min(capacity, 3)
+    const rows = Math.ceil(capacity / 3)
+
+    return {
+      width: SPACE_WIDTH * columns,
+      height: SPACE_HEIGHT * rows,
+    }
+  }
 
   const visibleCustomObjects =
     customObjects.filter(
@@ -6469,6 +6792,24 @@ function App() {
                 </span>
 
                 Sort numbers
+              </button>
+
+              <button
+                className={
+                  'tool' +
+                  (activeTool === 'multiLot'
+                    ? ' active'
+                    : '')
+                }
+                onClick={() =>
+                  setActiveTool('multiLot')
+                }
+              >
+                <span className="tool-icon">
+                  🚗
+                </span>
+
+                Multiple Lot
               </button>
 
               <button
@@ -7247,6 +7588,67 @@ function App() {
                 )
               })}
 
+              {visibleMultiLots.map((item) => {
+                const count = vehicles.filter(
+                  (vehicle) =>
+                    vehicle.multiLotId ===
+                    item.id
+                ).length
+
+                const size = getMultiLotSize(
+                  count
+                )
+
+                const isSelected =
+                  selectedMultiLot === item.id
+
+                const isSnapTarget =
+                  snapMultiLotTarget ===
+                  item.id
+
+                return (
+                  <div
+                    key={item.id}
+                    className={
+                      'multi-lot' +
+                      (isSelected
+                        ? ' selected'
+                        : '') +
+                      (isSnapTarget
+                        ? ' snap-target'
+                        : '')
+                    }
+                    style={{
+                      left: item.x,
+                      top: item.y,
+                      width: size.width,
+                      height: size.height,
+                      cursor: showToolsPanel
+                        ? 'grab'
+                        : 'pointer',
+                    }}
+                    onMouseDown={(event) =>
+                      startMultiLotDrag(
+                        event,
+                        item
+                      )
+                    }
+                  >
+                    <div className="multi-lot-icon">
+                      🚗
+                    </div>
+
+                    <div className="multi-lot-count">
+                      {count}
+                    </div>
+
+                    <div className="multi-lot-label">
+                      {item.label}
+                    </div>
+                  </div>
+                )
+              })}
+
               {showToolsPanel &&
                 selectedLabelData &&
                 (() => {
@@ -7947,6 +8349,7 @@ function App() {
             selectedRoadData ||
             selectedLabelData ||
             selectedCustomObjectData ||
+            selectedMultiLotData ||
             selectedSpaces.length > 1) && (
             <aside className="inspector">
               {selectedSpaces.length > 1 ? (
@@ -8637,6 +9040,124 @@ function App() {
                       }
                     >
                       Delete object
+                    </button>
+                  </div>
+                </>
+              ) : selectedMultiLotData ? (
+                <>
+                  <div className="inspector-header">
+                    <div>
+                      <span className="inspector-eyebrow">
+                        MULTIPLE LOT
+                      </span>
+
+                      <h2>
+                        {
+                          selectedMultiLotData.label
+                        }
+                      </h2>
+                    </div>
+
+                    <button
+                      className="close-button"
+                      onClick={
+                        closeInspector
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      ZONE NAME
+                    </label>
+
+                    <input
+                      type="text"
+                      value={
+                        selectedMultiLotData.label
+                      }
+                      onChange={
+                        updateMultiLotName
+                      }
+                      onFocus={pushHistory}
+                      className="space-name-input"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="detail-group">
+                    <label>
+                      CARS HERE (
+                      {
+                        vehicles.filter(
+                          (vehicle) =>
+                            vehicle.multiLotId ===
+                            selectedMultiLotData.id
+                        ).length
+                      }
+                      )
+                    </label>
+
+                    {vehicles.filter(
+                      (vehicle) =>
+                        vehicle.multiLotId ===
+                        selectedMultiLotData.id
+                    ).length === 0 ? (
+                      <div className="field-hint">
+                        Drag a car here to add
+                        it to this zone.
+                      </div>
+                    ) : (
+                      <div className="member-list">
+                        {vehicles
+                          .filter(
+                            (vehicle) =>
+                              vehicle.multiLotId ===
+                              selectedMultiLotData.id
+                          )
+                          .map((vehicle) => (
+                            <div
+                              key={vehicle.id}
+                              className="member-row"
+                              style={{
+                                cursor:
+                                  'pointer',
+                              }}
+                              onClick={() =>
+                                jumpToVehicle(
+                                  vehicle
+                                )
+                              }
+                            >
+                              <span className="member-email">
+                                {vehicle.registration ||
+                                  vehicle.vin ||
+                                  'Unnamed car'}
+                              </span>
+
+                              <span className="member-role-label">
+                                {vehicle.status}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="field-hint">
+                    Drag the zone to move it. It
+                    grows automatically as more
+                    cars are added.
+                  </div>
+
+                  <div className="inspector-actions">
+                    <button
+                      className="delete-button"
+                      onClick={deleteMultiLot}
+                    >
+                      Delete zone
                     </button>
                   </div>
                 </>
