@@ -2265,7 +2265,7 @@ function App() {
   const [spaceAddCount, setSpaceAddCount] = useState(1)
 
   const clampZoom = (value) => {
-    return Math.min(2, Math.max(0.4, value))
+    return Math.min(2, Math.max(0.2, value))
   }
 
   // The zoom percentage shown to the user is relative to this value,
